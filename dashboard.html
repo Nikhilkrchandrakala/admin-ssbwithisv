@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+
+  <link rel="stylesheet" href="./assets/css/dashboard.css" />
+  <link rel="stylesheet" href="./assets/css/admin-header.css" />
+</head>
+
+<body>
+  <header class="admin-dashboard-navbar">
+
+    <div class="admin-dashboard-left">
+      <img src="./assets/imgs/admin-img.jpg" alt="Admin Image" class="admin-dashboard-image">
+      Hi  Superadmin;👋🏻
+    </div>
+    <div class="admin-dashboard-right">
+      <a href="./dashboard.html" class="admin-dashboard-link active">DashBoard</a>
+      <a href="./magazine.html" class="admin-dashboard-link">Magazine</a>
+
+      <a href="./BlogList.html" class="admin-dashboard-link ">Blogs</a>
+      <a href="./candidate.html" class="admin-dashboard-link ">Candidates</a>
+      <a href="./Gallery.html" class="admin-dashboard-link ">Gallery</a>
+      <a href="./Courses.html" class="admin-dashboard-link ">Courses</a>
+      <a href="./Franchise.html" class="admin-dashboard-link ">Franchise</a>
+      <a href="./TotalSales.html" class="admin-dashboard-link ">Total Sales</a>
+      <a href="./CouponManagement.html" class="admin-dashboard-link ">Coupons</a>
+      <a href="./leads.html" class="admin-dashboard-link">Leads</a>
+
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+  <div class="container">
+
+
+
+    <h2>Home Page Numbers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Candidates Recommended</th>
+          <th>Years of Proven Track Record</th>
+          <th>Years of Domain Expertise</th>
+          <th>Total Faculty</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="numberMonitorTableBody"></tbody>
+    </table>
+  </div>
+  <script src="./assets/js/admin-header.js"></script>
+  <script src="./assets/js/config.js"></script>
+  <script src="./assets/js/dashboard.js"></script>
+</body>
+
+</html>

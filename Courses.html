@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Month Wise Batch View | Manual Booking</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --theme-color: #715c20;
+            --secondary-color: #e3c607;
+            --theme-white: #c6c5af;
+            --dark-gray: #1f1f1f;
+            --gray: #3b3930;
+            --light-gray: #f2f0e1;
+            --white: #ffffff;
+            --gradient-dark: linear-gradient(291.97deg, #0b0b0b 0.67%, rgba(31, 31, 31, 0.3) 50%, #0b0b0b 99.33%);
+            --gradient-gold: linear-gradient(90deg, #e0c214 0%, #d2a100 100%);
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            background-color: var(--dark-gray);
+            color: var(--theme-white);
+            min-height: 100vh;
+        }
+
+        /* Navbar Styles */
+        .admin-dashboard-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #000080;
+            padding: 10px 20px;
+            color: #fff;
+            flex-wrap: wrap;
+        }
+
+        .admin-dashboard-left {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            color: #c8baba;
+            font-weight: 700;
+        }
+
+        .admin-dashboard-image {
+            height: 50px;
+            border-radius: 50%;
+        }
+
+        .admin-dashboard-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .admin-dashboard-link {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .admin-dashboard-link:hover {
+            color: white;
+        }
+
+        .active {
+            color: #f0c040;
+        }
+
+        #logoutBtn {
+            background-color: #dc3545;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            border: none;
+        }
+
+        button {
+            padding: 8px 18px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        /* Month Navigation Header */
+        .month-nav-header {
+            background: var(--gradient-dark);
+            border-radius: var(--radius-lg);
+            padding: 20px 30px;
+            margin-bottom: 35px;
+            border: 1px solid var(--gray);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .month-display {
+            text-align: center;
+        }
+
+        .month-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--secondary-color);
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .year-name {
+            font-size: 1rem;
+            color: var(--theme-white);
+            opacity: 0.7;
+        }
+
+        .nav-arrow {
+            background: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            transition: all 0.3s;
+        }
+
+        .nav-arrow:hover {
+            background: var(--secondary-color);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        /* Batch Cards Grid */
+        .slots-grid-modern {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 25px;
+            margin-top: 15px;
+        }
+
+        .slot-card {
+            background: var(--gradient-dark);
+            border: 1px solid var(--gray);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(2px);
+        }
+
+        .slot-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--secondary-color);
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .slot-header-badge {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .batch-type-badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .morning-badge {
+            background: rgba(0, 191, 255, 0.1);
+            color: #00BFFF;
+            border: 1px solid #00BFFF;
+        }
+
+        .evening-badge {
+            background: rgba(191, 64, 191, 0.1);
+            color: #BF40BF;
+            border: 1px solid #BF40BF;
+        }
+
+        .slot-info {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            font-size: 0.95rem;
+        }
+
+        .info-label {
+            color: var(--theme-white);
+            opacity: 0.7;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .price-tag {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffd966;
+        }
+
+        .slot-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: 0.3s;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+        }
+
+        .edit-slot {
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .edit-slot:hover {
+            background: var(--secondary-color);
+            color: #000;
+        }
+
+        .delete-slot {
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .delete-slot:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        /* Manual Book Button Style */
+        .book-slot {
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+        }
+
+        .book-slot:hover {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .empty-month-state {
+            text-align: center;
+            padding: 70px 20px;
+            background: var(--gradient-dark);
+            border-radius: var(--radius-lg);
+            border: 1px dashed var(--secondary-color);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: var(--secondary-color);
+            opacity: 0.5;
+            margin-bottom: 20px;
+        }
+
+        .add-slot-btn {
+            background: transparent;
+            color: var(--secondary-color);
+            padding: 10px 28px;
+            font-weight: 600;
+            border: 1.5px solid var(--secondary-color);
+            border-radius: 40px;
+            transition: all 0.3s;
+        }
+
+        .add-slot-btn:hover {
+            background: var(--secondary-color);
+            color: #000;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner-custom {
+            width: 55px;
+            height: 55px;
+            border: 4px solid rgba(227, 198, 7, 0.2);
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            background: var(--dark-gray);
+            border: 1px solid var(--gray);
+            border-radius: var(--radius-md);
+            color: var(--theme-white);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .modal-title {
+            color: var(--secondary-color);
+        }
+
+        .form-control,
+        .form-select {
+            background: #2c2c2c;
+            border: 1px solid var(--gray);
+            color: var(--theme-white);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: #333;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(227, 198, 7, 0.25);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .admin-dashboard-navbar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .month-name {
+                font-size: 1.5rem;
+            }
+
+            .nav-arrow {
+                width: 40px;
+                height: 40px;
+            }
+
+            .slots-grid-modern {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Admin Navigation -->
+    <header class="admin-dashboard-navbar">
+        <div class="admin-dashboard-left">
+            <img src="./assets/imgs/admin-img.jpg" alt="Admin Image" class="admin-dashboard-image"
+                onerror="this.src='https://randomuser.me/api/portraits/men/32.jpg'">
+            Hi Superadmin; 👋🏻
+        </div>
+        <div class="admin-dashboard-right">
+            <a href="./dashboard.html" class="admin-dashboard-link">Dashboard</a>
+            <a href="./magazine.html" class="admin-dashboard-link">Magazine</a>
+            <a href="./BlogList.html" class="admin-dashboard-link">Blogs</a>
+            <a href="./candidate.html" class="admin-dashboard-link">Candidates</a>
+            <a href="./Gallery.html" class="admin-dashboard-link">Gallery</a>
+            <a href="./Courses.html" class="admin-dashboard-link active">Courses</a>
+            <a href="./Franchise.html" class="admin-dashboard-link">Franchise</a>
+            <a href="./TotalSales.html" class="admin-dashboard-link">Total Sales</a>
+            <a href="./CouponManagement.html" class="admin-dashboard-link">Coupons</a>
+            <a href="./leads.html" class="admin-dashboard-link">Leads</a>
+            <button id="logoutBtn">Logout</button>
+        </div>
+    </header>
+
+    <div class="container mt-4 mb-5">
+        <!-- Month Navigation Header -->
+        <div class="month-nav-header">
+            <div class="row align-items-center">
+                <div class="col-3 text-start">
+                    <button class="nav-arrow" id="prevMonthBtn"><i class="fas fa-chevron-left"></i></button>
+                </div>
+                <div class="col-6 month-display">
+                    <div class="month-name" id="currentMonthDisplay">March 2026</div>
+                    <div class="year-name" id="batchStatsInfo">Loading batches...</div>
+                </div>
+                <div class="col-3 text-end">
+                    <button class="nav-arrow" id="nextMonthBtn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col text-center">
+                    <button class="add-slot-btn" id="openAddSlotModalBtn"><i class="fas fa-plus-circle"></i> Add New
+                        Batch</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <div class="spinner-custom"></div>
+            <p>Loading month-wise batches...</p>
+        </div>
+
+        <!-- Batches Grid Container -->
+        <div id="slotsGridContainer" class="slots-grid-modern"></div>
+
+        <!-- Empty State -->
+        <div id="emptyMonthState" class="empty-month-state" style="display: none;">
+            <div class="empty-icon"><i class="far fa-calendar-times"></i></div>
+            <h4>No batches in this month</h4>
+            <p>Click "Add New Batch" to create a batch for <span id="emptyMonthName"></span></p>
+            <button class="add-slot-btn" id="emptyAddSlotBtn"><i class="fas fa-plus"></i> Create Batch</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Batch Modal -->
+    <div class="modal fade" id="slotModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle"><i class="fas fa-plus-circle me-2"></i>Add New Batch</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="slotForm">
+                        <input type="hidden" id="slotId">
+                        <div class="mb-3">
+                            <label class="form-label">Batch Type *</label>
+                            <select class="form-select" id="batchType" required>
+                                <option value="">Select</option>
+                                <option value="morning">Morning Batch</option>
+                                <option value="evening">Evening Batch</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Batch No (e.g. 2026-01)</label>
+                            <input type="text" class="form-control" id="batchNo" placeholder="Enter Batch Number">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Start Date *</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Max Students</label>
+                                <input type="number" class="form-control" id="maxStudents" min="1" value="10">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price (₹)</label>
+                                <input type="number" step="0.01" class="form-control" id="price" value="0">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-warning" id="saveSlotBtn">Save Batch</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Booking Modal: Select Student (User) -->
+    <div class="modal fade" id="manualBookModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Manual Seat Booking</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select Student (User ID / Email)</label>
+                        <input type="text" class="form-control" id="manualUserId" placeholder="Enter User ID or Email"
+                            required>
+                        <small class="text-muted">Enter the registered user's email or user ID to book this seat
+                            manually.</small>
+                    </div>
+                    <div id="manualBookInfo" class="alert alert-secondary mt-2 d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success" id="confirmManualBookBtn"><i class="fas fa-check-circle"></i>
+                        Confirm Booking</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteSlotModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Permanently delete this batch? This action cannot be undone.</p>
+                    <input type="hidden" id="deleteSlotId">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger" id="confirmDeleteSlotBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./assets/js/config.js"></script>
+    <script>
+        // ---------- CONFIG ----------
+        const BACKEND_URL = (typeof config !== 'undefined' && config.backendBaseUrl) ? config.backendBaseUrl : "http://localhost:5001";
+        console.log("Backend URL:", BACKEND_URL);
+
+        // DOM elements
+        const slotsContainer = document.getElementById('slotsGridContainer');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const emptyMonthState = document.getElementById('emptyMonthState');
+        const currentMonthDisplay = document.getElementById('currentMonthDisplay');
+        const batchStatsInfo = document.getElementById('batchStatsInfo');
+        const slotModalObj = new bootstrap.Modal(document.getElementById('slotModal'));
+        const deleteModalObj = new bootstrap.Modal(document.getElementById('deleteSlotModal'));
+        const manualBookModalObj = new bootstrap.Modal(document.getElementById('manualBookModal'));
+
+        // State variables
+        let currentDate = new Date();
+        let allBatches = [];
+        let currentEditId = null;
+        let currentBookingSlotId = null;   // store slot id for manual booking
+
+        // Helper: get token
+        function getToken() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Session expired. Please login again.');
+                window.location.href = '/';
+                return null;
+            }
+            return token;
+        }
+
+        // Format date to DD MMM YYYY
+        function formatDateOnly(isoString) {
+            if (!isoString) return 'N/A';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        // Fetch all batches from backend
+        async function fetchAllBatches() {
+            const token = getToken();
+            if (!token) return [];
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/allSlots`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch');
+                const batches = await response.json();
+                allBatches = batches || [];
+                return allBatches;
+            } catch (err) {
+                console.error(err);
+                allBatches = [];
+                return [];
+            }
+        }
+
+        // Filter batches by month
+        function filterBatchesByMonth(batches, year, monthIndex) {
+            return batches.filter(batch => {
+                if (!batch.startTime) return false;
+                const date = new Date(batch.startTime);
+                return date.getFullYear() === year && date.getMonth() === monthIndex;
+            });
+        }
+
+        // Render month info and cards
+        function renderMonthView() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const currentMonthName = `${monthNames[month]} ${year}`;
+            currentMonthDisplay.innerText = currentMonthName;
+
+            const monthBatches = filterBatchesByMonth(allBatches, year, month);
+            const totalBatches = monthBatches.length;
+            const totalCapacity = monthBatches.reduce((sum, b) => sum + (b.maxStudents || 0), 0);
+            const totalBooked = monthBatches.reduce((sum, b) => sum + (b.bookedStudents ? b.bookedStudents.length : 0), 0);
+            batchStatsInfo.innerHTML = `${totalBatches} batches | Capacity: ${totalCapacity} | Booked: ${totalBooked}`;
+
+            if (monthBatches.length === 0) {
+                slotsContainer.style.display = 'none';
+                emptyMonthState.style.display = 'block';
+                document.getElementById('emptyMonthName').innerText = currentMonthName;
+                return;
+            }
+
+            slotsContainer.style.display = 'grid';
+            emptyMonthState.style.display = 'none';
+            renderBatchCards(monthBatches);
+        }
+
+        // Manual booking handler
+        function openManualBookingModal(slotId) {
+            currentBookingSlotId = slotId;
+            document.getElementById('manualUserId').value = '';
+            const infoDiv = document.getElementById('manualBookInfo');
+            infoDiv.classList.add('d-none');
+            manualBookModalObj.show();
+        }
+
+        // Confirm manual booking using the API endpoint: POST /api/manualBookSlot/:id
+        async function confirmManualBooking() {
+            const token = getToken();
+            if (!token || !currentBookingSlotId) return;
+
+            const userIdentifier = document.getElementById('manualUserId').value.trim();
+            if (!userIdentifier) {
+                alert('Please enter a valid User ID or Email');
+                return;
+            }
+
+            const confirmBtn = document.getElementById('confirmManualBookBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
+
+            try {
+                // Note: According to the backend route: router.post("/manualBookSlot/:id", checkAuth, async (req, res)
+                // It expects the userId from req.user.id (logged-in admin). But your requirement says manual seat book using any user.
+                // However, based on typical flow, we're using the current admin's token, but the backend might add the admin's own ID.
+                // To make it work for any student, we need to pass the target userId in request body.
+                // But the given endpoint uses req.user.id (current logged in user). Since we want admin to book for another student,
+                // we should enhance the endpoint to accept userId in body. To match your backend exactly, let's call the same endpoint
+                // but here we assume the backend will be modified slightly OR we send identifier somehow. 
+                // For robustness, I'll call the endpoint with identifier in body so that backend can adapt. 
+                // However, based on your code snippet endpoint uses only token and books for logged-in admin. 
+                // But to demonstrate manual seat booking by admin for any student, I'll embed userId/email in JSON body.
+                // The backend should ideally accept "studentId" or email to lookup user. Since you gave the endpoint spec,
+                // I will call a consistent endpoint but with additional payload. I'll assume you can adjust backend
+                // to read from body OR we can pass as query? For now, I'm implementing as per common pattern: 
+                // POST /api/manualBookSlot/:id  with body { userId: "..." }
+                // If your backend currently uses only req.user.id, you can update backend to check body or param userId.
+
+                const response = await fetch(`${BACKEND_URL}/api/manualBookSlot/${currentBookingSlotId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        email: userIdentifier   // sending email or id for backend to process
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.message || 'Booking failed');
+                }
+
+                const result = await response.json();
+                alert('✅ Seat booked manually successfully!');
+                manualBookModalObj.hide();
+                // Refresh data
+                await fetchAllBatches();
+                renderMonthView();
+            } catch (err) {
+                console.error(err);
+                alert('❌ Booking failed: ' + err.message);
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Booking';
+            }
+        }
+
+        // Render cards with extra manual book button
+        function renderBatchCards(batches) {
+            slotsContainer.innerHTML = '';
+            batches.forEach(slot => {
+                const startDisplay = formatDateOnly(slot.startTime);
+                const priceDisplay = slot.price ? `₹ ${Number(slot.price).toFixed(2)}` : 'Free';
+                const maxStudents = slot.maxStudents || 'Unlimited';
+                const bookedCount = slot.bookedStudents ? slot.bookedStudents.length : 0;
+                const available = (slot.maxStudents && slot.maxStudents > 0) ? (slot.maxStudents - bookedCount) : 0;
+                const isFull = (slot.maxStudents && bookedCount >= slot.maxStudents);
+                const availabilityStatus = isFull ?
+                    '<span class="badge bg-danger">Full</span>' :
+                    `<span class="badge bg-success">${available} spots left</span>`;
+
+                const isMorning = (slot.batchType === 'morning' || (slot.title && slot.title.toLowerCase().includes('morning')));
+                const batchTitle = slot.title || (isMorning ? 'Morning Batch' : 'Evening Batch');
+                const batchTypeClass = isMorning ? 'morning-badge' : 'evening-badge';
+                const batchIcon = isMorning ? 'fa-sun' : 'fa-moon';
+
+                const card = document.createElement('div');
+                card.className = 'slot-card';
+                card.innerHTML = `
+                    <div class="slot-header-badge">
+                        <span class="batch-type-badge ${batchTypeClass}">
+                            <i class="fas ${batchIcon}"></i> ${batchTitle} ${slot.batchNo ? `(#${slot.batchNo})` : ''}
+                        </span>
+                    </div>
+                    <div class="slot-info">
+                        <div class="info-row">
+                            <span class="info-label"><i class="far fa-calendar-alt"></i> Start Date:</span>
+                            <span class="info-value">${startDisplay}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-users"></i> Capacity:</span>
+                            <span class="info-value">${maxStudents} students (${bookedCount} booked)</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-tag"></i> Price:</span>
+                            <span class="info-value price-tag">${priceDisplay}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="fas fa-chair"></i> Availability:</span>
+                            <span class="info-value">${availabilityStatus}</span>
+                        </div>
+                        <div class="slot-actions">
+                            <button class="action-btn edit-slot" data-id="${slot._id}"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="action-btn delete-slot" data-id="${slot._id}"><i class="fas fa-trash-alt"></i> Delete</button>
+                            <button class="action-btn book-slot" data-id="${slot._id}" ${isFull ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}><i class="fas fa-user-check"></i> Manual Book</button>
+                        </div>
+                    </div>
+                `;
+                slotsContainer.appendChild(card);
+            });
+
+            // Edit events
+            document.querySelectorAll('.edit-slot').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = btn.getAttribute('data-id');
+                    openEditModal(id);
+                });
+            });
+            // Delete events
+            document.querySelectorAll('.delete-slot').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = btn.getAttribute('data-id');
+                    document.getElementById('deleteSlotId').value = id;
+                    deleteModalObj.show();
+                });
+            });
+            // Manual book events
+            document.querySelectorAll('.book-slot').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = btn.getAttribute('data-id');
+                    if (btn.disabled) return;
+                    openManualBookingModal(id);
+                });
+            });
+        }
+
+        // Open edit modal
+        async function openEditModal(slotId) {
+            const token = getToken();
+            if (!token) return;
+            try {
+                const resp = await fetch(`${BACKEND_URL}/api/slotDetail/${slotId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!resp.ok) throw new Error('Cannot fetch batch');
+                const slot = await resp.json();
+                currentEditId = slot._id;
+                document.getElementById('slotId').value = slot._id;
+                document.getElementById('batchType').value = (slot.batchType || '').toLowerCase();
+                document.getElementById('batchNo').value = slot.batchNo || '';
+                if (slot.startTime) {
+                    const d = new Date(slot.startTime);
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    document.getElementById('startDate').value = `${yyyy}-${mm}-${dd}`;
+                }
+                document.getElementById('maxStudents').value = slot.maxStudents || 10;
+                document.getElementById('price').value = slot.price || 0;
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Batch';
+                slotModalObj.show();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function openAddModal() {
+            currentEditId = null;
+            document.getElementById('slotForm').reset();
+            document.getElementById('slotId').value = '';
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('startDate').value = tomorrow.toISOString().slice(0, 10);
+            document.getElementById('maxStudents').value = 10;
+            document.getElementById('price').value = 0;
+            document.getElementById('batchType').value = '';
+            document.getElementById('batchNo').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Add New Batch';
+            slotModalObj.show();
+        }
+
+        // Save batch (create/update)
+        document.getElementById('saveSlotBtn').addEventListener('click', async () => {
+            const token = getToken();
+            if (!token) return;
+            const batchType = document.getElementById('batchType').value;
+            const startDate = document.getElementById('startDate').value;
+            if (!batchType || !startDate) {
+                alert('Please fill batch type and start date');
+                return;
+            }
+            const startDateTime = new Date(startDate);
+            startDateTime.setHours(0, 0, 0, 0);
+            const startTimeISO = startDateTime.toISOString();
+            const endTimeISO = new Date(startDateTime.getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+            const payload = {
+                title: batchType === 'morning' ? 'Morning Batch' : 'Evening Batch',
+                batchNo: document.getElementById('batchNo').value,
+                batchType: batchType,
+                startTime: startTimeISO,
+                endTime: endTimeISO,
+                maxStudents: parseInt(document.getElementById('maxStudents').value) || 0,
+                price: parseFloat(document.getElementById('price').value) || 0
+            };
+
+            const isEdit = currentEditId !== null;
+            let url = `${BACKEND_URL}/api/addSlot`;
+            let method = 'POST';
+            if (isEdit) {
+                url = `${BACKEND_URL}/api/updateSlot/${currentEditId}`;
+                method = 'PUT';
+            }
+
+            try {
+                const btn = document.getElementById('saveSlotBtn');
+                btn.disabled = true;
+                btn.innerText = 'Saving...';
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.message || 'Save failed');
+                }
+                alert(isEdit ? 'Batch updated!' : 'Batch created!');
+                slotModalObj.hide();
+                await fetchAllBatches();
+                renderMonthView();
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                const btn = document.getElementById('saveSlotBtn');
+                btn.disabled = false;
+                btn.innerText = 'Save Batch';
+            }
+        });
+
+        async function deleteBatchById(id) {
+            const token = getToken();
+            if (!token) return;
+            try {
+                const resp = await fetch(`${BACKEND_URL}/api/deleteSlot/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!resp.ok) throw new Error('Delete failed');
+                alert('Batch deleted');
+                deleteModalObj.hide();
+                await fetchAllBatches();
+                renderMonthView();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        document.getElementById('confirmDeleteSlotBtn').addEventListener('click', () => {
+            const id = document.getElementById('deleteSlotId').value;
+            if (id) deleteBatchById(id);
+        });
+
+        // Month navigation
+        document.getElementById('prevMonthBtn').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderMonthView();
+        });
+        document.getElementById('nextMonthBtn').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderMonthView();
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        });
+
+        // Initialize
+        async function init() {
+            loadingSpinner.style.display = 'block';
+            slotsContainer.style.display = 'none';
+            emptyMonthState.style.display = 'none';
+            await fetchAllBatches();
+            loadingSpinner.style.display = 'none';
+            renderMonthView();
+        }
+
+        document.getElementById('openAddSlotModalBtn').addEventListener('click', openAddModal);
+        document.getElementById('emptyAddSlotBtn').addEventListener('click', openAddModal);
+        document.getElementById('confirmManualBookBtn').addEventListener('click', confirmManualBooking);
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
