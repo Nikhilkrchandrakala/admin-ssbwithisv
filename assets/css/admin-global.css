@@ -214,3 +214,71 @@ body {
     border: 1px solid rgba(241, 196, 15, 0.3);
 }
 
+/* Global Action Buttons (Edit, Delete, Copy etc.) */
+.action-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-white);
+    transition: var(--transition);
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+/* Default / Edit button (Gold theme) */
+.action-btn:not(.delete-btn):not(.manual-btn):not(.secondary) {
+    color: var(--primary-gold);
+    background: rgba(224, 194, 20, 0.1);
+    border: 1px solid rgba(224, 194, 20, 0.2);
+}
+
+.action-btn:not(.delete-btn):not(.manual-btn):not(.secondary):hover {
+    background: var(--gold-gradient);
+    color: #0b0b0b;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(224, 194, 20, 0.3);
+}
+
+/* Specific Edit Button class hook */
+.action-btn.edit-btn {
+    color: var(--primary-gold) !important;
+    background: rgba(224, 194, 20, 0.1) !important;
+    border: 1px solid rgba(224, 194, 20, 0.2) !important;
+}
+
+.action-btn.edit-btn:hover {
+    background: var(--gold-gradient) !important;
+    color: #0b0b0b !important;
+    border-color: transparent !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 10px rgba(224, 194, 20, 0.3) !important;
+}
+
+/* Delete / Discard button (Red theme) */
+.action-btn.delete-btn {
+    color: #ff6b6b !important;
+    background: rgba(255, 107, 107, 0.1) !important;
+    border: 1px solid rgba(255, 107, 107, 0.2) !important;
+}
+
+.action-btn.delete-btn:hover {
+    background: #ff6b6b !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3) !important;
+}
+
+/* Contrast fix for accessibility */
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+
