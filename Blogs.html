@@ -1,373 +1,223 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Panel - Manage Blog</title>
-
-    <link rel="stylesheet" href="./assets/css/magazine.css" />
-    <link rel="stylesheet" href="./assets/css/admin-header.css" />
-    <link rel="stylesheet" href="./assets/css/Blog.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Blog Management</title>
 
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
-
-    <!-- Font Awesome for icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet" />
-
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- CKEditor 5 -->
     <script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
 
+    <link rel="stylesheet" href="./assets/css/admin-global.css" />
+    <link rel="stylesheet" href="./assets/css/admin-header.css" />
     <style>
-        /* Image text inputs styling */
-        .image-text-input {
-            width: 100%;
-            margin-top: 8px;
+        .blog-editor-card {
+            background: var(--surface-dark);
+            border: var(--border-gold);
+            border-radius: var(--radius-md);
+            padding: 40px;
+            margin-bottom: 30px;
         }
-
-        .img-thumbnail {
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
+        .section-divider {
+            height: 1px;
+            background: rgba(224, 194, 20, 0.2);
+            margin: 30px 0;
         }
-
-        /* Remove button in image preview */
-        .admin-blog-remove-img {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 14px;
-            cursor: pointer;
+        .section-title {
+            color: var(--primary-gold);
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
+            gap: 10px;
         }
-
-        .admin-blog-remove-img:hover {
-            background: #c82333;
-            transform: scale(1.1);
-        }
-
-        /* Image preview container */
-        .admin-blog-ImagePreview {
-            position: relative;
-            margin-bottom: 15px;
-        }
-
-        /* For edit mode - existing images */
-        .existing-images-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(31, 31, 31, 0.5);
-            border-radius: 8px;
-            border: 1px solid rgba(227, 198, 7, 0.3);
-        }
-
-        .existing-images-title {
-            color: #e3c607;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-
-        .existing-images-grid {
-            display: flex;
-            flex-wrap: wrap;
+        
+        /* Image Preview Styles */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 15px;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
-
-        .existing-image-item {
+        .preview-item {
             position: relative;
-            width: 120px;
-            height: 120px;
-            border-radius: 8px;
+            aspect-ratio: 1;
+            border-radius: var(--radius-sm);
             overflow: hidden;
-            border: 2px solid #715c20;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-
-        .existing-image-item img {
+        .preview-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-
-        .remove-existing-btn {
+        .remove-preview {
             position: absolute;
             top: 5px;
             right: 5px;
-            background: rgba(220, 53, 69, 0.9);
-            color: white;
-            border: none;
             width: 24px;
             height: 24px;
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             font-size: 12px;
+            z-index: 2;
         }
-
-        .remove-existing-btn:hover {
-            background: rgba(220, 53, 69, 1);
+        
+        /* CKEditor Custom Styling */
+        .ck-editor__main .ck-content {
+            background: var(--surface-dark) !important;
+            color: var(--text-white) !important;
+            min-height: 300px;
+            border: 1px solid rgba(255,255,255,0.1) !important;
         }
-
-        .image-text-badge {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 3px 5px;
-            font-size: 11px;
+        .ck.ck-toolbar {
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+        }
+        .ck.ck-button:hover { background: rgba(224, 194, 20, 0.2) !important; }
+        .ck.ck-button.ck-on { background: var(--primary-gold) !important; color: #000 !important; }
+        
+        .upload-area {
+            border: 2px dashed rgba(224, 194, 20, 0.3);
+            border-radius: var(--radius-md);
+            padding: 40px;
             text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(255,255,255,0.02);
         }
-
-        /* Loading spinner */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
+        .upload-area:hover { background: rgba(224, 194, 20, 0.05); border-color: var(--primary-gold); }
+        .upload-area i { font-size: 3rem; color: var(--primary-gold); margin-bottom: 15px; }
+        
+        .image-text-fields { margin-top: 25px; }
+        .image-field-row {
             display: flex;
+            gap: 15px;
             align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            display: none;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: var(--radius-sm);
         }
-
-        .spinner {
+        .image-field-thumb {
             width: 50px;
             height: 50px;
-            border: 5px solid rgba(227, 198, 7, 0.3);
-            border-top: 5px solid #e3c607;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            border-radius: 4px;
+            object-fit: cover;
         }
     </style>
 </head>
 
 <body>
-    <!-- Loading Spinner -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-    </div>
+    <header class="admin-dashboard-navbar"></header>
 
-    <header class="admin-dashboard-navbar">
-        <div class="admin-dashboard-left">
-            <img src="./assets/imgs/admin-img.jpg" alt="Admin Image" class="admin-dashboard-image">
-            Hi  Superadmin;👋🏻
-        </div>
-        <div class="admin-dashboard-right">
-            <a href="./dashboard.html" class="admin-dashboard-link">DashBoard</a>
-            <a href="./magazine.html" class="admin-dashboard-link">Magazine</a>
-            <a href="./BlogList.html" class="admin-dashboard-link active">Blogs</a>
-            <a href="./candidate.html" class="admin-dashboard-link">Candidates</a>
-            <a href="./Gallery.html" class="admin-dashboard-link ">Gallery</a>
-            <a href="./Courses.html" class="admin-dashboard-link ">Courses</a>
-            <a href="./Franchise.html" class="admin-dashboard-link ">Franchise</a>
-            <a href="./TotalSales.html" class="admin-dashboard-link ">Total Sales</a>
-      <a href="./CouponManagement.html" class="admin-dashboard-link ">Coupons</a>
-
-
-
-
-
-            <a href="./leads.html" class="admin-dashboard-link">Leads</a>
-            <button id="logoutBtn">Logout</button>
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="col-12 row mx-auto">
-            <div class="col-lg-10 mx-auto">
-                <div class="admin-blog-card">
-                    <div class="admin-blog-card-header">
-                        <h1 id="pageTitle">Add New Blog Post</h1>
-                        <p id="pageSubtitle">
-                            Fill in the details below to create a new blog post
-                        </p>
-                    </div>
-
-                    <form id="adminBlogFrom">
-                        <!-- Hidden input for blog ID (for edit mode) -->
-                        <input type="hidden" id="blogId" value="">
-
-                        <!-- Blog Title Section -->
-                        <div class="admin-form-sct">
-                            <h3 class="admin-form-sct-title">
-                                Basic Information
-                            </h3>
-
-                            <div class="form-group mb-4">
-                                <label for="blogTitle" class="form-label required">Blog Title</label>
-                                <input type="text" id="blogTitle" class="thm-input" placeholder="Enter blog title" />
-                                <div id="blogTitleError" class="error-message">
-                                    Please enter a blog title
-                                </div>
-                            </div>
-
-                            <div class="form-group mb-4">
-                                <label for="shortDescription" class="form-label required">Short Description</label>
-                                <textarea id="shortDescription" class="thm-input" rows="3"
-                                    placeholder="Brief summary of the blog post (max 200 characters)"></textarea>
-                                <div id="shortDescriptionError" class="error-message">
-                                    Please enter a short description
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Blog Content Section -->
-                        <div class="admin-form-sct">
-                            <h3 class="admin-form-sct-title">
-                                Blog Content
-                            </h3>
-
-                            <div class="form-group mb-4">
-                                <label class="form-label required">Full Description</label>
-                                <div id="editorContainer"></div>
-                                <div id="editorError" class="error-message">
-                                    Please enter blog content
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Existing Images Section (for edit mode) -->
-                        <div id="existingImagesSection" class="admin-form-sct existing-images-section"
-                            style="display: none;">
-                            <h3 class="admin-form-sct-title">
-                                Existing Images
-                            </h3>
-                            <div class="existing-images-grid" id="existingImagesGrid">
-                                <!-- Existing images will be loaded here -->
-                            </div>
-                            <small style="color: #c6c5af;">Click the red (×) button to mark images for removal.</small>
-                        </div>
-
-                        <!-- New Image Upload Section -->
-                        <div class="admin-form-sct">
-                            <h3 class="admin-form-sct-title">
-                                Add New Images
-                            </h3>
-
-                            <div class="form-group mb-4">
-                                <label class="form-label">Upload New Images (Multiple)</label>
-
-                                <div class="admin-blog-image-upload-area" id="blogImgUploadArea">
-                                    <div class="admin-blog-image-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="admin-blog-image-upload-text">
-                                        Click to upload or drag and drop
-                                    </div>
-                                    <div class="admin-blog-image-upload-subtext">
-                                        PNG, JPG, GIF up to 5MB each
-                                    </div>
-                                    <input type="file" id="blogImgInput" multiple accept="image/*"
-                                        style="display: none" />
-                                </div>
-
-                                <!-- New Image Previews -->
-                                <div class="admin-blog-ImagePreview-container" id="blogImgPreviewContainer">
-                                    <!-- New image previews will appear here -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Author Information -->
-                        <div class="admin-form-sct">
-                            <h3 class="admin-form-sct-title">
-                                Author Information
-                            </h3>
-
-                            <div class="row">
-                                <div class="col-md-6 form-group mb-4">
-                                    <label for="authorName" class="form-label required">Author Name</label>
-                                    <input type="text" id="authorName" class="thm-input"
-                                        placeholder="Enter author name" />
-                                    <div id="authorNameError" class="error-message">
-                                        Please enter author name
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6 form-group mb-4">
-                                    <label for="authorQuote" class="form-label">Author Quote</label>
-                                    <input type="text" id="authorQuote" class="thm-input"
-                                        placeholder="Enter a quote by the author" />
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <!-- Time Duration -->
-                                <div class="col-md-6 form-group mb-4">
-                                    <label for="timeDuration" class="form-label required">Time Duration</label>
-                                    <input type="text" id="timeDuration" class="thm-input"
-                                        placeholder="e.g. 5 min read" />
-                                    <div id="timeDurationError" class="error-message">
-                                        Please enter time duration
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Image Text Inputs -->
-                            <div class="row">
-                                <div class="col-12 form-group mb-4">
-                                    <div id="imageTextsContainer">
-                                        <!-- Dynamic image text inputs for NEW images will be added here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Form Actions -->
-                        <div class="row col-12 mx-auto justify-content-end gx-3 pe-0">
-                            <div class="col-auto">
-                                <button type="button" class="thm-btn1" id="cancelBtn">
-                                    Cancel
-                                </button>
-                            </div>
-                            <div class="col-auto pe-0">
-                                <button type="submit" class="thm-btn1" id="submitBtn">
-                                    Publish Blog
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+    <div class="container" style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
+        <div class="admin-page-header">
+            <div class="header-left">
+                <h1 class="admin-page-title" id="pageMainTitle"><i class="fas fa-edit me-2"></i> Create Blog Post</h1>
+                <p class="text-muted mb-0">Compose and publish insightful articles for your audience</p>
             </div>
+            <a href="./BlogList.html" class="thm-btn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
+                <i class="fas fa-arrow-left me-2"></i> Back to List
+            </a>
+        </div>
+
+        <div class="blog-editor-card">
+            <form id="adminBlogFrom">
+                <input type="hidden" id="blogId">
+
+                <!-- Basic Details -->
+                <div class="section-title"><i class="fas fa-info-circle"></i> Basic Information</div>
+                <div class="mb-4">
+                    <label class="admin-form-label">Blog Title *</label>
+                    <input type="text" id="blogTitle" class="admin-input" placeholder="e.g. Master the SSB Interview" required>
+                </div>
+                <div class="mb-4">
+                    <label class="admin-form-label">Short Summary *</label>
+                    <textarea id="shortDescription" class="admin-input" rows="3" placeholder="A brief catchphrase for the blog list (max 200 chars)" required></textarea>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <!-- Content Area -->
+                <div class="section-title"><i class="fas fa-pen-nib"></i> Article Content</div>
+                <div class="mb-4">
+                    <label class="admin-form-label">Full Content *</label>
+                    <div id="editorContainer"></div>
+                </div>
+
+                <div class="section-divider"></div>
+
+                <!-- Media Section -->
+                <div class="section-title"><i class="fas fa-images"></i> Media & Visuals</div>
+                <div class="mb-3">
+                    <label class="admin-form-label">Upload Blog Images</label>
+                    <div class="upload-area" id="blogImgUploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h5>Click or Drag images to upload</h5>
+                        <p class="text-muted small">PNG, JPG or GIF up to 5MB each (Multiple allowed)</p>
+                        <input type="file" id="blogImgInput" multiple accept="image/*" style="display:none;">
+                    </div>
+                </div>
+
+                <!-- New Previews -->
+                <div id="blogImgPreviewContainer" class="preview-grid mb-4"></div>
+
+                <!-- Image Text Inputs -->
+                <div id="imageTextsContainer" class="image-text-fields mb-4"></div>
+
+                <div class="section-divider"></div>
+
+                <!-- Author Info -->
+                <div class="section-title"><i class="fas fa-user-edit"></i> Publication Credits</div>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="admin-form-label">Author Name *</label>
+                        <input type="text" id="authorName" class="admin-input" placeholder="e.g. Capt. Vikram Batra" required>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="admin-form-label">Read Time (Duration) *</label>
+                        <input type="text" id="timeDuration" class="admin-input" placeholder="e.g. 5 min read" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="admin-form-label">Author Quote (Optional)</label>
+                    <input type="text" id="authorQuote" class="admin-input" placeholder="A short inspiring quote from the author">
+                </div>
+
+                <div class="mt-5 d-flex gap-3">
+                    <button type="submit" class="thm-btn" id="submitBtn" style="min-width: 200px;">
+                        <i class="fas fa-paper-plane me-2"></i> Publish Article
+                    </button>
+                    <button type="button" id="cancelBtn" class="thm-btn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);">
+                        Discard Changes
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="./assets/js/config.js"></script>
+    <script src="./assets/js/admin-header.js"></script>
     <script src="./assets/js/Blogs.js"></script>
-
 </body>
 
 </html>

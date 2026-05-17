@@ -1,48 +1,85 @@
+/**
+ * Admin Login Logic
+ * Standardized for the Charcoal/Gold Admin System
+ */
 
-const loginForm = document.getElementById('loginForm');
-const errorMessage = document.getElementById('errorMessage');
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const API_BASE = config?.backendBaseUrl || 'http://localhost:5001';
 
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
+    if (!loginForm) return;
 
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-  try {
-    const response = await fetch(`${config.backendBaseUrl}/api/AdminLogin`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) {
+            Swal.fire({
+                icon: 'warning',
+                text: 'Please enter both email and password.',
+                background: '#1a1a1a',
+                color: '#fff',
+                confirmButtonColor: '#e0c214'
+            });
+            return;
+        }
+
+        try {
+            // Loading state
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Authenticating...';
+
+            const response = await fetch(`${API_BASE}/api/AdminLogin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Save Session
+                localStorage.setItem('token', result.token);
+                localStorage.setItem('role', result.role);
+
+                // Success Feedback
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Access Granted',
+                    text: 'Welcome back to the command center.',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
+
+                // Role-based routing
+                if (result.role === "admin") {
+                    window.location.href = "./dashboard.html";
+                } else if (result.role === "franchise") {
+                    window.location.href = "./FranchiseDashboard.html";
+                } else {
+                    window.location.href = "/";
+                }
+            } else {
+                throw new Error(result.error || result.message || 'Invalid credentials');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Authentication Failed',
+                text: error.message,
+                background: '#1a1a1a',
+                color: '#fff',
+                confirmButtonColor: '#ff6b6b'
+            });
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> Authenticate';
+        }
     });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      alert('Login successful!');
-
-      // ✅ Save token
-      localStorage.setItem('token', result.token);
-
-      // ✅ Save role (important)
-      localStorage.setItem('role', result.role);
-
-      // ✅ Role-based redirect
-      if (result.role === "admin") {
-        window.location.href = "./dashboard.html";
-      } else if (result.role === "franchise") {
-        window.location.href = "./FranchiesDashboard.html";
-      } else {
-        window.location.href = "/";
-      }
-
-    } else {
-      errorMessage.textContent = result.error || 'An error occurred';
-    }
-  } catch (error) {
-    errorMessage.textContent = 'Failed to login. Please try again.';
-  }
 });
-
-

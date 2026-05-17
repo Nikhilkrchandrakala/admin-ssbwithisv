@@ -1,239 +1,175 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Candidate Management</title>
 
-    <link rel="stylesheet" href="./assets/css/admin-header.css" />
-    <link rel="stylesheet" href="./assets/css/candidate.css" />
-
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
-
-    <!-- Font Awesome for icons -->
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" /> -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet" />
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
+    <link rel="stylesheet" href="./assets/css/admin-global.css" />
+    <link rel="stylesheet" href="./assets/css/admin-header.css" />
     <style>
-        /* Additional styles for better UX */
-        .required::after {
-            content: " *";
-            color: #ff4757;
+        .candidate-img-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary-gold);
         }
-
-        button {
-            padding: 10px 15px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-
-            
-        }
-
-        .thm-input:required:invalid {
-            border-color: #ff4757;
-        }
-
-        .thm-input:required:valid {
-            border-color: #2ed573;
-        }
-
-        /* Image preview styles */
-        .candidate-image-preview {
-            display: none;
-            max-width: 100%;
-            max-height: 200px;
-            margin-top: 10px;
-            border-radius: 5px;
-            border: 2px solid var(--theme-color);
-        }
-
-        /* Image upload area */
-        .candidate-image-upload-area {
-            border: 2px dashed var(--theme-color);
-            border-radius: 10px;
+        .upload-zone {
+            border: 2px dashed rgba(224, 194, 20, 0.3);
+            border-radius: var(--radius-md);
             padding: 30px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.02);
             position: relative;
         }
-
-        .candidate-image-upload-area:hover {
-            background: rgba(0, 0, 0, 0.3);
-            border-color: var(--theme-white);
+        .upload-zone:hover {
+            background: rgba(224, 194, 20, 0.05);
+            border-color: var(--primary-gold);
         }
-
-        .candidate-image-upload-icon {
-            font-size: 48px;
-            color: var(--theme-color);
-            margin-bottom: 10px;
+        .upload-icon { font-size: 2.5rem; color: var(--primary-gold); margin-bottom: 10px; }
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: var(--radius-sm);
+            margin-top: 15px;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .candidate-image-upload-text {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 5px;
+        
+        /* DataTables Custom Styling */
+        .dataTables_wrapper .dataTables_length, 
+        .dataTables_wrapper .dataTables_filter, 
+        .dataTables_wrapper .dataTables_info, 
+        .dataTables_wrapper .dataTables_processing, 
+        .dataTables_wrapper .dataTables_paginate {
+            color: var(--text-white) !important;
+            margin-bottom: 15px;
         }
-
-        .candidate-image-upload-subtext {
-            font-size: 12px;
-            color: var(--theme-white);
-            opacity: 0.7;
+        .dataTables_wrapper .dataTables_filter input {
+            background: var(--surface-dark);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            border-radius: 20px;
+            padding: 5px 15px;
         }
-
-        .candidate-image-upload-area input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
+        .dataTables_wrapper .dataTables_length select {
+            background: var(--surface-dark);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            border-radius: 10px;
+        }
+        .page-link {
+            background: var(--surface-dark);
+            border-color: rgba(255,255,255,0.1);
+            color: var(--primary-gold);
+        }
+        .page-item.active .page-link {
+            background: var(--primary-gold);
+            border-color: var(--primary-gold);
+            color: #000;
         }
     </style>
 </head>
 
-<body style="background-color: var(--dark-gray); color: var(--theme-white);">
+<body>
+    <header class="admin-dashboard-navbar"></header>
 
-    <header class="admin-dashboard-navbar">
-        <div class="admin-dashboard-left">
-            <img src="./assets/imgs/admin-img.jpg" alt="Admin Image" class="admin-dashboard-image">
-            Hi  Superadmin;👋🏻
-        </div>
-        <div class="admin-dashboard-right">
-            <a href="./dashboard.html" class="admin-dashboard-link ">DashBoard</a>
-            <a href="./magazine.html" class="admin-dashboard-link ">Magazine</a>
-            <a href="./BlogList.html" class="admin-dashboard-link">Blogs</a>
-            <a href="./candidate.html" class="admin-dashboard-link active">Candidates</a>
-            <a href="./Gallery.html" class="admin-dashboard-link ">Gallery</a>
-            <a href="./Courses.html" class="admin-dashboard-link ">Courses</a>
-            <a href="./Franchise.html" class="admin-dashboard-link ">Franchise</a>
-            <a href="./TotalSales.html" class="admin-dashboard-link ">Total Sales</a>
-      <a href="./CouponManagement.html" class="admin-dashboard-link ">Coupons</a>
-
-
-
-
-
-            <a href="./leads.html" class="admin-dashboard-link">Leads</a>
-            <button id="logoutBtn">Logout</button>
-        </div>
-    </header>
-
-    <div class="container mt-4">
-        <!-- Header -->
-        <div class="admin-candidate-header">
-            <h1>Candidate Management</h1>
-            <button class="thm-btn1" data-bs-toggle="modal" data-bs-target="#addCandidateModal">
-                <i class="fas fa-plus me-2"></i>Add New Candidate
+    <div class="container" style="max-width: 1400px; margin: 40px auto; padding: 0 20px;">
+        <div class="admin-page-header">
+            <div class="header-left">
+                <h1 class="admin-page-title"><i class="fas fa-user-graduate me-2"></i> Candidate Management</h1>
+                <p class="text-muted mb-0">Manage successful candidates, their records, and display status</p>
+            </div>
+            <button class="thm-btn" data-bs-toggle="modal" data-bs-target="#addCandidateModal">
+                <i class="fas fa-plus-circle"></i> Add New Candidate
             </button>
         </div>
 
-        <!-- Candidates Table -->
-        <div class="table-container">
-            <table id="candidatesTable" class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Entry No</th>
-                        <th>Board</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Data will be loaded via JavaScript -->
-                </tbody>
-            </table>
+        <div class="admin-card">
+            <div class="admin-table-container">
+                <table id="candidatesTable" class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Entry No</th>
+                            <th>Board</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- Add Candidate Modal -->
-    <div style="background-color: var(--dark-gray); color: var(--theme-white);" class="modal fade"
-        id="addCandidateModal" tabindex="-1" aria-labelledby="addCandidateModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+    <div class="modal fade" id="addCandidateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content admin-modal">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addCandidateModalLabel">Add New Candidate</h5>
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Add New Candidate</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="addCandidateForm">
                     <div class="modal-body">
                         <div class="row">
-                            <!-- Left Column -->
                             <div class="col-md-6">
-                                <!-- Name -->
                                 <div class="mb-3">
-                                    <label for="name" class="form-label required">Name</label>
-                                    <input type="text" class="thm-input" id="name" name="name" required>
+                                    <label class="admin-form-label">Full Name *</label>
+                                    <input type="text" class="admin-input" name="name" required placeholder="Enter candidate name">
                                 </div>
-
-                                <!-- Entry Number -->
                                 <div class="mb-3">
-                                    <label for="entry" class="form-label required">Entry Number</label>
-                                    <input type="text" class="thm-input" id="entry" name="entry" required>
+                                    <label class="admin-form-label">Entry Number *</label>
+                                    <input type="text" class="admin-input" name="entry" required placeholder="e.g. SSB-2024-001">
                                 </div>
-
-                                <!-- Board -->
                                 <div class="mb-3">
-                                    <label for="board" class="form-label required">Board</label>
-                                    <input type="text" class="thm-input" id="board" name="board" required>
+                                    <label class="admin-form-label">SSB Board *</label>
+                                    <input type="text" class="admin-input" name="board" required placeholder="e.g. 1 AFSB Varanasi">
                                 </div>
-
-                                <!-- Status -->
                                 <div class="mb-3">
-                                    <label for="status" class="form-label">Status</label>
-                                    <select class="thm-input" id="status" name="status">
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
+                                    <label class="admin-form-label">Status</label>
+                                    <select class="admin-input" name="status">
+                                        <option value="active">Active (Visible)</option>
+                                        <option value="inactive">Inactive (Hidden)</option>
                                     </select>
                                 </div>
                             </div>
-
-                            <!-- Right Column - Image Upload -->
                             <div class="col-md-6">
-                                <label class="form-label required">Candidate Image</label>
-                                <!-- Image upload area -->
-                                <div class="candidate-image-upload-area" id="imageUploadArea">
-                                    <div class="candidate-image-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="candidate-image-upload-text">
-                                        Click to upload image
-                                    </div>
-                                    <div class="candidate-image-upload-subtext">
-                                        PNG, JPG up to 5MB
-                                    </div>
-                                    <input type="file" id="imageInput" accept="image/*">
+                                <label class="admin-form-label">Candidate Photo *</label>
+                                <div class="upload-zone" id="imageUploadArea">
+                                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                    <div class="upload-text">Click or Drag to Upload Photo</div>
+                                    <div class="text-muted small">JPG, PNG (Max 5MB)</div>
+                                    <input type="file" id="imageInput" accept="image/*" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
                                 </div>
-                                <img id="imagePreview" class="candidate-image-preview" src="" alt="Preview">
+                                <div class="text-center">
+                                    <img id="imagePreview" class="preview-img" alt="Preview">
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="thm-btn1 small" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="thm-btn1 small" id="submitCandidateBtn">
-                            <span id="submitBtnText">Add Candidate</span>
-                            <span id="submitSpinner" class="spinner-border spinner-border-sm d-none" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </span>
-                        </button>
+                        <button type="button" class="thm-btn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="thm-btn" id="submitCandidateBtn">Create Candidate</button>
                     </div>
                 </form>
             </div>
@@ -241,98 +177,69 @@
     </div>
 
     <!-- Edit Candidate Modal -->
-    <div class="modal fade" id="editCandidateModal" tabindex="-1" aria-labelledby="editCandidateModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+    <div class="modal fade" id="editCandidateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content admin-modal">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editCandidateModalLabel">Edit Candidate</h5>
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Edit Candidate</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="editCandidateForm">
                     <input type="hidden" id="editCandidateId">
                     <div class="modal-body">
                         <div class="row">
-                            <!-- Left Column -->
                             <div class="col-md-6">
-                                <!-- Name -->
                                 <div class="mb-3">
-                                    <label for="editName" class="form-label required">Name</label>
-                                    <input type="text" class="thm-input" id="editName" name="name" required>
+                                    <label class="admin-form-label">Full Name *</label>
+                                    <input type="text" class="admin-input" id="editName" name="name" required>
                                 </div>
-
-                                <!-- Entry Number -->
                                 <div class="mb-3">
-                                    <label for="editEntry" class="form-label required">Entry Number</label>
-                                    <input type="text" class="thm-input" id="editEntry" name="entry" required>
+                                    <label class="admin-form-label">Entry Number *</label>
+                                    <input type="text" class="admin-input" id="editEntry" name="entry" required>
                                 </div>
-
-                                <!-- Board -->
                                 <div class="mb-3">
-                                    <label for="editBoard" class="form-label required">Board</label>
-                                    <input type="text" class="thm-input" id="editBoard" name="board" required>
+                                    <label class="admin-form-label">SSB Board *</label>
+                                    <input type="text" class="admin-input" id="editBoard" name="board" required>
                                 </div>
-
-                                <!-- Status -->
                                 <div class="mb-3">
-                                    <label for="editStatus" class="form-label">Status</label>
-                                    <select class="thm-input" id="editStatus" name="status">
+                                    <label class="admin-form-label">Status</label>
+                                    <select class="admin-input" id="editStatus" name="status">
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
                                     </select>
                                 </div>
                             </div>
-
-                            <!-- Right Column - Image Upload -->
                             <div class="col-md-6">
-                                <label class="form-label">Candidate Image</label>
-                                <!-- Edit image upload area -->
-                                <div class="candidate-image-upload-area" id="editImageUploadArea">
-                                    <div class="candidate-image-upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <div class="candidate-image-upload-text">
-                                        Click to change image
-                                    </div>
-                                    <div class="candidate-image-upload-subtext">
-                                        PNG, JPG up to 5MB
-                                    </div>
-                                    <input type="file" id="editImageInput" accept="image/*">
+                                <label class="admin-form-label">Change Candidate Photo</label>
+                                <div class="upload-zone" id="editImageUploadArea">
+                                    <div class="upload-icon"><i class="fas fa-image"></i></div>
+                                    <div class="upload-text">Click to change photo</div>
+                                    <input type="file" id="editImageInput" accept="image/*" style="position:absolute; inset:0; opacity:0; cursor:pointer;">
                                 </div>
-                                <img id="editImagePreview" class="candidate-image-preview" src="" alt="Preview">
+                                <div class="text-center">
+                                    <img id="editImagePreview" class="preview-img" alt="Preview">
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="thm-btn1 small" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="thm-btn1 small" id="updateCandidateBtn">
-                            <span id="updateBtnText">Update Candidate</span>
-                            <span id="updateSpinner" class="spinner-border spinner-border-sm d-none" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </span>
-                        </button>
+                        <button type="button" class="thm-btn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="thm-btn" id="updateCandidateBtn">Update Candidate</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- jQuery -->
+    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
-    <!-- DataTables -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-    <!-- Config JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="./assets/js/config.js"></script>
-
-    <!-- Candidate JS -->
-    <script src="./assets/js/condidate.js"></script>
-
+    <script src="./assets/js/admin-header.js"></script>
+    <script src="./assets/js/candidate.js"></script>
 </body>
 
 </html>
