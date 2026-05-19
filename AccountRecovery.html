@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Recovery - SSB Admin</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./assets/css/admin-global.css">
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #050505 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .recovery-orb {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(224, 194, 20, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(40px);
+        }
+
+        .recovery-container {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(224, 194, 20, 0.15);
+            padding: 45px 40px;
+            border-radius: var(--radius-md);
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .recovery-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .recovery-header .logo-icon {
+            font-size: 2.8rem;
+            color: var(--primary-gold);
+            margin-bottom: 12px;
+            display: inline-block;
+            filter: drop-shadow(0 0 10px rgba(224, 194, 20, 0.3));
+        }
+
+        .recovery-header h2 {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #fff;
+            margin-bottom: 6px;
+            font-size: 1.6rem;
+        }
+
+        .recovery-header p {
+            color: var(--text-white);
+            opacity: 0.5;
+            font-size: 0.85rem;
+        }
+
+        .form-floating > .form-control {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: var(--radius-sm);
+        }
+
+        .form-floating > .form-control:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary-gold);
+            box-shadow: none;
+        }
+
+        .form-floating > label {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: var(--primary-gold);
+            opacity: 0.8;
+        }
+
+        .recovery-btn {
+            background: var(--gold-gradient);
+            color: #000;
+            border: none;
+            padding: 13px;
+            border-radius: var(--radius-sm);
+            font-weight: 800;
+            width: 100%;
+            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .recovery-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(224, 194, 20, 0.4);
+        }
+
+        .recovery-btn:active {
+            transform: translateY(0);
+        }
+
+        .step-container {
+            display: none;
+        }
+
+        .step-container.active {
+            display: block;
+        }
+
+        .back-link {
+            color: var(--text-white);
+            opacity: 0.6;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            margin-top: 20px;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            color: var(--primary-gold);
+        }
+
+        .timer-display {
+            font-size: 0.85rem;
+            color: var(--primary-gold);
+            margin-top: 8px;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="recovery-orb"></div>
+
+    <div class="recovery-container">
+        <div class="recovery-header">
+            <div class="logo-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h2>Account Recovery</h2>
+            <p>Verify your credentials to reset secure password</p>
+        </div>
+
+        <!-- STEP 1: Enter Email or Phone -->
+        <div id="step1" class="step-container active">
+            <form id="step1Form">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="identifier" placeholder="Email or Phone" required>
+                    <label for="identifier">Email Address or Phone Number</label>
+                </div>
+                <small class="text-muted d-block mb-3"><i class="fas fa-info-circle"></i> Enter your registered email address or your 10-digit mobile number.</small>
+
+                <button type="submit" class="recovery-btn">
+                    <i class="fas fa-paper-plane me-2"></i> Send Verification OTP
+                </button>
+            </form>
+        </div>
+
+        <!-- STEP 2: Enter Verification OTP -->
+        <div id="step2" class="step-container">
+            <form id="step2Form">
+                <p class="small text-muted mb-4"><i class="fas fa-envelope-open-text me-1 text-warning"></i> An OTP has been dispatched. Please check your Inbox / SMS messages.</p>
+                
+                <div class="form-floating mb-2">
+                    <input type="text" class="form-control" id="otpCode" placeholder="6-digit OTP" required maxlength="6" pattern="\d{6}">
+                    <label for="otpCode">6-Digit Verification OTP</label>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="javascript:void(0)" id="resendOtpBtn" class="small" style="color: var(--primary-gold); text-decoration: none; opacity: 0.8;">Resend Code</a>
+                    <div id="otpTimer" class="timer-display"></div>
+                </div>
+
+                <button type="submit" class="recovery-btn mt-4">
+                    <i class="fas fa-shield-check me-2"></i> Verify Verification Code
+                </button>
+            </form>
+        </div>
+
+        <!-- STEP 3: Enter New Password -->
+        <div id="step3" class="step-container">
+            <form id="step3Form">
+                <div class="form-floating mb-3 position-relative">
+                    <input type="password" class="form-control" id="newPassword" placeholder="New Password" required minlength="6" style="padding-right: 45px;">
+                    <label for="newPassword">New Security Password</label>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('newPassword', this)" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; z-index: 10; transition: color 0.2s;"><i class="fas fa-eye-slash"></i></button>
+                </div>
+                
+                <div class="form-floating mb-4 position-relative">
+                    <input type="password" class="form-control" id="confirmNewPassword" placeholder="Confirm Password" required minlength="6" style="padding-right: 45px;">
+                    <label for="confirmNewPassword">Confirm New Password</label>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirmNewPassword', this)" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; z-index: 10; transition: color 0.2s;"><i class="fas fa-eye-slash"></i></button>
+                </div>
+
+                <button type="submit" class="recovery-btn">
+                    <i class="fas fa-lock-keyhole me-2"></i> Reset Security Password
+                </button>
+            </form>
+        </div>
+
+        <div class="text-center">
+            <a href="./index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Gateway Authenticate
+            </a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="./assets/js/config.js"></script>
+    <script src="./assets/js/recovery.js"></script>
+    <script>
+        function togglePasswordVisibility(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            const icon = btnEl.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        }
+    </script>
+</body>
+
+</html>
