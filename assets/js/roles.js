@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${sourceBadge}</td>
                     <td>${details}</td>
                     <td style="text-align: center;">
-                        <button class="thm-btn" style="padding: 6px 14px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${u.name.replace(/'/g, "\\'")}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}')">
+                        <button class="thm-btn" style="padding: 6px 14px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${u.name.replace(/'/g, "\\'")}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}')">
                             <i class="fas fa-user-tag me-1"></i> Edit Role
                         </button>
                     </td>
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Modal Control: Edit Existing Staff Role
-    window.openRoleModal = (id, name, email, role, commission, phone) => {
+    window.openRoleModal = (id, name, email, role, commission, phone, permissionsStr = "") => {
         modalTitle.innerHTML = `<i class="fas fa-user-edit me-2"></i> Update Account Role`;
         modalUserId.value = id;
         modalUserEmail.value = email;
@@ -152,12 +152,16 @@ document.addEventListener("DOMContentLoaded", () => {
         modalUserRole.value = role || "assessor";
         modalCommission.value = commission || 20;
 
-        // Toggle commission percent group
-        if (role === "franchise") {
-            commissionGroup.style.display = "block";
-        } else {
-            commissionGroup.style.display = "none";
-        }
+        // Reset and check permissions
+        const permissions = permissionsStr.split(',').filter(Boolean);
+        const checkboxes = document.querySelectorAll('input[name="permissions"]');
+        checkboxes.forEach(cb => {
+            cb.checked = permissions.includes(cb.value);
+        });
+
+        // Toggle groups
+        commissionGroup.style.display = (role === "franchise") ? "block" : "none";
+        document.getElementById("permissionsGroup").style.display = (role === "admin") ? "block" : "none";
 
         roleModalOverlay.style.display = "flex";
     };
@@ -185,6 +189,8 @@ document.addEventListener("DOMContentLoaded", () => {
         modalUserRole.value = "assessor";
         modalCommission.value = 20;
         commissionGroup.style.display = "none";
+        document.getElementById("permissionsGroup").style.display = "none";
+        document.querySelectorAll('input[name="permissions"]').forEach(cb => cb.checked = false);
 
         roleModalOverlay.style.display = "flex";
     };
@@ -194,12 +200,18 @@ document.addEventListener("DOMContentLoaded", () => {
         roleForm.reset();
     };
 
-    // Toggle Franchise commission rate input box on role change
+    // Toggle Franchise/Admin inputs on role change
     modalUserRole.addEventListener("change", (e) => {
-        if (e.target.value === "franchise") {
-            commissionGroup.style.display = "block";
-        } else {
-            commissionGroup.style.display = "none";
+        commissionGroup.style.display = (e.target.value === "franchise") ? "block" : "none";
+        document.getElementById("permissionsGroup").style.display = (e.target.value === "admin") ? "block" : "none";
+    });
+    
+    // Super Admin auto-check toggle
+    document.getElementById("superAdminCheck").addEventListener("change", (e) => {
+        if (e.target.checked) {
+            document.querySelectorAll('input[name="permissions"]').forEach(cb => {
+                if(cb.id !== "superAdminCheck") cb.checked = true;
+            });
         }
     });
 
@@ -214,6 +226,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const phone = modalUserPhone.value.trim();
         const password = modalUserPassword.value.trim();
         const commission = modalCommission.value;
+        
+        // Extract permissions
+        const permissions = [];
+        if (targetRole === 'admin') {
+            document.querySelectorAll('input[name="permissions"]:checked').forEach(cb => {
+                permissions.push(cb.value);
+            });
+        }
 
         try {
             Swal.fire({
@@ -242,7 +262,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     name: name,
                     phone: phone,
                     password: password,
-                    commissionPercent: Number(commission)
+                    commissionPercent: Number(commission),
+                    permissions: permissions
                 })
             });
 

@@ -18,6 +18,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Enforce Assessor restrictions — assessors go straight to PsychBattery
+    if (token && role === 'assessor') {
+        const psychBaseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3000'
+            : 'https://psych.ssbwithisv.in';
+        window.location.href = `${psychBaseUrl}?token=${token}`;
+        return;
+    }
+
     // Inject Modern Navbar
     const navbar = document.querySelector('.admin-dashboard-navbar');
     if (navbar) {
@@ -59,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <a href="./CouponManagement.html" class="admin-dashboard-link ${currentPath === 'CouponManagement.html' ? 'active' : ''}">Coupons</a>
                             <a href="./leads.html" class="admin-dashboard-link ${currentPath === 'leads.html' ? 'active' : ''}">Leads</a>
                             <a href="./RolesManagement.html" class="admin-dashboard-link ${currentPath === 'RolesManagement.html' ? 'active' : ''}">Roles & Permissions</a>
+                            <a href="#" class="admin-dashboard-link" id="psychBatteryNavLink">Psyche Battery</a>
                         </div>
                     </div>
                     
@@ -74,6 +84,19 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.removeItem('role');
             window.location.href = './index.html';
         });
+
+        // Psyche Battery SSO link (admin only)
+        const psychLink = document.getElementById('psychBatteryNavLink');
+        if (psychLink) {
+            psychLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const t = localStorage.getItem('token');
+                const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? 'http://localhost:3000'
+                    : 'https://psych.ssbwithisv.in';
+                window.open(`${baseUrl}?token=${t}`, '_blank');
+            });
+        }
 
         // Dropdown toggle logic (only applicable for Admin)
         const dropdown = document.querySelector('.admin-dropdown');

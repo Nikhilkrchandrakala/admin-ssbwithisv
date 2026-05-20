@@ -61,6 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = "./dashboard.html";
                 } else if (result.role === "franchise") {
                     window.location.href = "./FranchiseDashboard.html";
+                } else if (result.role === "assessor") {
+                    // SSO redirect to Psyche Battery assessor dashboard
+                    const psychBaseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                        ? 'http://localhost:3000'
+                        : 'https://psych.ssbwithisv.in';
+                    window.location.href = `${psychBaseUrl}?token=${result.token}`;
                 } else {
                     window.location.href = "/";
                 }
