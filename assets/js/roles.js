@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let roleLabel = "Candidate";
             if (u.role === "admin") {
                 roleBadgeClass = "role-admin";
-                if (u.email.toLowerCase() === "info@ssbwithisv.in") {
+                if (u.email.toLowerCase() === "info@ssbwithisv.in" || (u.permissions && u.permissions.includes("super_admin"))) {
                     roleLabel = "SUPER ADMIN";
                 } else {
                     roleLabel = "Admin";
@@ -116,16 +116,19 @@ document.addEventListener("DOMContentLoaded", () => {
             // Database collection origin indicator
             const sourceBadge = `<span class="source-badge">${u.sourceCollection}</span>`;
 
+            const safeName = u.name || "System Admin";
+            const escapedName = safeName.replace(/'/g, "\\'");
+
             return `
                 <tr>
-                    <td><strong>${u.name || "N/A"}</strong></td>
+                    <td><strong>${safeName}</strong></td>
                     <td>${u.email}</td>
                     <td>${u.phone || "N/A"}</td>
                     <td><span class="role-badge ${roleBadgeClass}">${roleLabel}</span></td>
                     <td>${sourceBadge}</td>
                     <td>${details}</td>
                     <td style="text-align: center;">
-                        <button class="thm-btn" style="padding: 6px 14px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${u.name.replace(/'/g, "\\'")}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}')">
+                        <button class="thm-btn" style="padding: 6px 14px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}')">
                             <i class="fas fa-user-tag me-1"></i> Edit Role
                         </button>
                     </td>

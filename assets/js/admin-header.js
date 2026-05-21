@@ -30,12 +30,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inject Modern Navbar
     const navbar = document.querySelector('.admin-dashboard-navbar');
     if (navbar) {
+        const displayName = localStorage.getItem('name') || (role === 'franchise' ? 'Franchise Partner' : 'SSB Admin');
         if (role === 'franchise') {
             // Restricted Navbar for Franchisee
             navbar.innerHTML = `
                 <div class="admin-dashboard-left">
                     <img src="./assets/imgs/admin-img.jpg" alt="Partner Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
-                    <span>Franchise Partner</span>
+                    <span>${displayName}</span>
                 </div>
                 <div class="admin-dashboard-right">
                     <a href="./FranchiseDashboard.html" class="admin-dashboard-link ${currentPath === 'FranchiseDashboard.html' ? 'active' : ''}">Franchise Dashboard</a>
@@ -48,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
             navbar.innerHTML = `
                 <div class="admin-dashboard-left">
                     <img src="./assets/imgs/admin-img.jpg" alt="Admin Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
-                    <span>SSB Superadmin</span>
+                    <span>${displayName}</span>
                 </div>
                 <div class="admin-dashboard-right">
                     <a href="./dashboard.html" class="admin-dashboard-link ${currentPath === 'dashboard.html' ? 'active' : ''}">Dashboard</a>

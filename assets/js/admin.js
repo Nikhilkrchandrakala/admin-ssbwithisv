@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Save Session
                 localStorage.setItem('token', result.token);
                 localStorage.setItem('role', result.role);
+                localStorage.setItem('name', result.user?.name || "");
 
                 // Success Feedback
                 await Swal.fire({
