@@ -215,9 +215,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    let isSubmittingRole = false;
+
     // Form submission
     roleForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        if (isSubmittingRole) return;
+        isSubmittingRole = true;
 
         const id = modalUserId.value;
         const targetRole = modalUserRole.value;
@@ -294,6 +299,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 color: "#fff",
                 confirmButtonColor: "#ff6b6b"
             });
+        } finally {
+            isSubmittingRole = false;
         }
     });
 
