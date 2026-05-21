@@ -89,7 +89,11 @@ document.addEventListener("DOMContentLoaded", () => {
             let roleLabel = "Candidate";
             if (u.role === "admin") {
                 roleBadgeClass = "role-admin";
-                roleLabel = "Admin";
+                if (u.email.toLowerCase() === "info@ssbwithisv.in") {
+                    roleLabel = "SUPER ADMIN";
+                } else {
+                    roleLabel = "Admin";
+                }
             } else if (u.role === "franchise") {
                 roleBadgeClass = "role-franchise";
                 roleLabel = "Franchise";
@@ -141,10 +145,10 @@ document.addEventListener("DOMContentLoaded", () => {
         modalUserEmail.style.opacity = "0.8";
 
         modalUserName.value = name || "";
-        modalUserName.setAttribute("readonly", "true");
-        modalUserName.style.background = "#2b2b2b";
-        modalUserName.style.borderColor = "#555";
-        modalUserName.style.opacity = "0.8";
+        modalUserName.removeAttribute("readonly");
+        modalUserName.style.background = "";
+        modalUserName.style.borderColor = "";
+        modalUserName.style.opacity = "";
 
         modalUserPhone.value = phone || "";
         modalUserPassword.value = "";
