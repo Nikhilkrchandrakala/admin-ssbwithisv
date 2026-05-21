@@ -127,9 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td><span class="role-badge ${roleBadgeClass}">${roleLabel}</span></td>
                     <td>${sourceBadge}</td>
                     <td>${details}</td>
-                    <td style="text-align: center;">
-                        <button class="thm-btn" style="padding: 6px 14px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}')">
-                            <i class="fas fa-user-tag me-1"></i> Edit Role
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button class="thm-btn" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}')">
+                            <i class="fas fa-edit me-1"></i> Edit
+                        </button>
+                        <button class="thm-btn" style="background:#ff6b6b; border-color:#ff6b6b; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px;" onclick="confirmDeleteUser('${u.id}', '${escapedName}', '${u.email}')">
+                            <i class="fas fa-trash-alt me-1"></i> Delete
                         </button>
                     </td>
                 </tr>
@@ -329,6 +332,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderUsers(filtered);
     }
+
+    // Modal Control: Confirm and Delete Staff User
+    window.confirmDeleteUser = (id, name, email) => {
+        Swal.fire({
+            title: "Delete Staff Member?",
+            html: `Are you sure you want to permanently delete <strong>${name}</strong> (<code>${email}</code>)?<br><br><span style="color:#ff6b6b; font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> This will delete the user completely from all databases!</span>`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ff6b6b",
+            cancelButtonColor: "#555",
+            confirmButtonText: "Yes, Delete permanently",
+            cancelButtonText: "Cancel",
+            background: "#1a1a1a",
+            color: "#fff"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    Swal.fire({
+                        title: "Deleting User...",
+                        text: "Please wait while the user account is removed.",
+                        allowOutsideClick: false,
+                        background: "#1a1a1a",
+                        color: "#fff",
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const response = await fetch(`${API_BASE}/api/admin/users/${id}`, {
+                        method: "DELETE",
+                        headers: {
+                            "Authorization": `Bearer ${token}`
+                        }
+                    });
+
+                    const resData = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(resData.error || "Failed to delete user account");
+                    }
+
+                    Swal.fire({
+                        icon: "success",
+                        title: "Deleted!",
+                        text: resData.message || "User account deleted successfully.",
+                        background: "#1a1a1a",
+                        color: "#fff",
+                        confirmButtonColor: "#e0c214"
+                    });
+
+                    fetchUsers(); // Refresh accounts list
+                } catch (error) {
+                    console.error("Delete User Error:", error);
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error Deleting User",
+                        text: error.message,
+                        background: "#1a1a1a",
+                        color: "#fff",
+                        confirmButtonColor: "#ff6b6b"
+                    });
+                }
+            }
+        });
+    };
 
     userSearch.addEventListener("input", applyFilters);
     roleFilter.addEventListener("change", applyFilters);
