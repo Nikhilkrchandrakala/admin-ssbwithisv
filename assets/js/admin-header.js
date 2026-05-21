@@ -31,6 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const navbar = document.querySelector('.admin-dashboard-navbar');
     if (navbar) {
         const displayName = localStorage.getItem('name') || (role === 'franchise' ? 'Franchise Partner' : 'SSB Admin');
+        const roleText = (role || 'ADMIN').replace('_', '').toUpperCase();
+        
         if (role === 'franchise') {
             // Restricted Navbar for Franchisee
             navbar.innerHTML = `
@@ -38,7 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     <img src="./assets/logo/ISV2.png" alt="SSB Seal" class="admin-navbar-seal" style="height: 38px; width: 38px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(224, 194, 20, 0.25)); margin-right: 5px;">
                     <div style="width: 1px; height: 26px; background: rgba(255, 255, 255, 0.15); margin: 0 10px;"></div>
                     <img src="./assets/imgs/admin-img.jpg" alt="Partner Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
-                    <span>${displayName}</span>
+                    <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                        <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">Welcome, ${displayName}</span>
+                        <span style="font-size: 0.72rem; color: var(--primary-gold); font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">${roleText}</span>
+                    </div>
                 </div>
                 <div class="admin-dashboard-right">
                     <a href="./FranchiseDashboard.html" class="admin-dashboard-link ${currentPath === 'FranchiseDashboard.html' ? 'active' : ''}">Franchise Dashboard</a>
@@ -53,7 +58,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     <img src="./assets/logo/ISV2.png" alt="SSB Seal" class="admin-navbar-seal" style="height: 38px; width: 38px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(224, 194, 20, 0.25)); margin-right: 5px;">
                     <div style="width: 1px; height: 26px; background: rgba(255, 255, 255, 0.15); margin: 0 10px;"></div>
                     <img src="./assets/imgs/admin-img.jpg" alt="Admin Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
-                    <span>${displayName}</span>
+                    <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                        <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">Welcome, ${displayName}</span>
+                        <span style="font-size: 0.72rem; color: var(--primary-gold); font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">${roleText}</span>
+                    </div>
                 </div>
                 <div class="admin-dashboard-right">
                     <a href="./dashboard.html" class="admin-dashboard-link ${currentPath === 'dashboard.html' ? 'active' : ''}">Dashboard</a>
