@@ -35,6 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Restricted Navbar for Franchisee
             navbar.innerHTML = `
                 <div class="admin-dashboard-left">
+                    <img src="./assets/logo/ISV2.png" alt="SSB Seal" class="admin-navbar-seal" style="height: 38px; width: 38px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(224, 194, 20, 0.25)); margin-right: 5px;">
+                    <div style="width: 1px; height: 26px; background: rgba(255, 255, 255, 0.15); margin: 0 10px;"></div>
                     <img src="./assets/imgs/admin-img.jpg" alt="Partner Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
                     <span>${displayName}</span>
                 </div>
@@ -48,6 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Full Admin Navbar
             navbar.innerHTML = `
                 <div class="admin-dashboard-left">
+                    <img src="./assets/logo/ISV2.png" alt="SSB Seal" class="admin-navbar-seal" style="height: 38px; width: 38px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(224, 194, 20, 0.25)); margin-right: 5px;">
+                    <div style="width: 1px; height: 26px; background: rgba(255, 255, 255, 0.15); margin: 0 10px;"></div>
                     <img src="./assets/imgs/admin-img.jpg" alt="Admin Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
                     <span>${displayName}</span>
                 </div>
