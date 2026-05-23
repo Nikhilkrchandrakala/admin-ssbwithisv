@@ -4,6 +4,53 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Auto-redirect if already logged in and on the login/index page
+    const existingToken = localStorage.getItem('token');
+    const existingRole = localStorage.getItem('role');
+
+    // Helper to verify JWT expiration clientside
+    const isTokenExpired = (t) => {
+        if (!t) return true;
+        try {
+            const base64Url = t.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const payload = JSON.parse(jsonPayload);
+            if (payload.exp && Date.now() >= payload.exp * 1000) {
+                return true;
+            }
+            return false;
+        } catch (e) {
+            return true;
+        }
+    };
+
+    if (existingToken && isTokenExpired(existingToken)) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('permissions');
+        localStorage.removeItem('name');
+    } else if (existingToken && existingRole) {
+        if (existingRole === "admin") {
+            window.location.href = "./Profile.html";
+            return;
+        } else if (existingRole === "franchise") {
+            window.location.href = "./FranchiseDashboard.html";
+            return;
+        } else if (existingRole === "assessor") {
+            // If an assessor lands back on the login page (e.g. after using "Back to Admin Panel"),
+            // clear the stale session and show the login form fresh.
+            // Do NOT auto-redirect assessors from the login page — they chose to come here.
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('permissions');
+            localStorage.removeItem('name');
+            // Fall through to show login form
+        }
+    }
+
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
     const API_BASE = config?.backendBaseUrl || 'http://localhost:5001';
@@ -45,6 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('token', result.token);
                 localStorage.setItem('role', result.role);
                 localStorage.setItem('name', result.user?.name || "");
+                if (result.role === "admin") {
+                    localStorage.setItem('permissions', JSON.stringify(result.user?.permissions || []));
+                } else {
+                    localStorage.removeItem('permissions');
+                }
 
                 // Success Feedback
                 await Swal.fire({
@@ -59,13 +111,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Role-based routing
                 if (result.role === "admin") {
-                    window.location.href = "./dashboard.html";
+                    window.location.href = "./Profile.html";
                 } else if (result.role === "franchise") {
                     window.location.href = "./FranchiseDashboard.html";
                 } else if (result.role === "assessor") {
                     // SSO redirect to Psyche Battery assessor dashboard
                     const psychBaseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                        ? 'http://localhost:3000'
+                        ? 'http://localhost:5173'
                         : 'https://psych.ssbwithisv.in';
                     window.location.href = `${psychBaseUrl}?token=${result.token}`;
                 } else {

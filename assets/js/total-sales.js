@@ -201,7 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="order-detail-row"><span>Customer Name</span><span class="fw-bold">${escapeHtml(o.userId?.name || o.customerName || 'Guest')}</span></div>
             <div class="order-detail-row"><span>Customer Email</span><span class="fw-bold">${escapeHtml(o.userId?.email || o.email || '-')}</span></div>
             <div class="order-detail-row"><span>Product Title</span><span class="fw-bold">${escapeHtml(o.slotId?.title || o.courseTitle || 'Product')}</span></div>
-            <div class="order-detail-row"><span>Batch Number</span><span class="fw-bold">${o.slotId?.batchNo || 'N/A'}</span></div>
+            <div class="order-detail-row" style="align-items: center;">
+                <span>Batch Number</span>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" id="editOrderBatchInput" class="admin-input py-1 px-2" style="max-width: 140px; font-size: 0.85rem; background: var(--surface-light); border: 1px solid rgba(224, 194, 20, 0.25); color: #fff; border-radius: 4px;" value="${o.slotId?.batchNo || ''}" placeholder="e.g. B45">
+                    <button class="thm-btn py-1 px-3" style="font-size: 0.78rem; padding: 4px 10px; border-radius: 4px;" onclick="saveOrderBatch('${o._id}', '${o.slotId?._id || ''}')"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </div>
             <div class="order-detail-row"><span>Original Amount</span><span class="fw-bold">₹${origPrice.toFixed(2)}</span></div>
             <div class="order-detail-row"><span>Discount Applied</span><span class="text-success">₹${discount.toFixed(2)}</span></div>
             <div class="order-detail-row" style="background: rgba(224,194,20,0.05); padding: 15px; margin: 10px 0; border-radius: 8px;">
@@ -213,6 +219,77 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="order-detail-row"><span>Date & Time</span><span class="opacity-70">${new Date(o.createdAt).toLocaleString()}</span></div>
         `;
         new bootstrap.Modal(document.getElementById('orderDetailModal')).show();
+    };
+
+    window.saveOrderBatch = async (orderId, slotId) => {
+        const newBatch = document.getElementById('editOrderBatchInput').value.trim();
+        if (!newBatch) {
+            Swal.fire({ icon: 'warning', text: 'Please enter a batch number.', background: '#1a1a1a', color: '#fff' });
+            return;
+        }
+
+        try {
+            Swal.fire({
+                title: 'Saving Batch Info...',
+                text: 'Updating batch schedule details.',
+                allowOutsideClick: false,
+                background: '#1a1a1a',
+                color: '#fff',
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const token = getToken();
+            const response = await fetch(`${API_BASE}/api/admin/orders/${orderId}/batch`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ batchNo: newBatch })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) throw new Error(result.error || 'Failed to update transaction batch');
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Batch Saved!',
+                text: 'The batch number has been updated successfully.',
+                background: '#1a1a1a',
+                color: '#fff',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            // Update in-memory record to avoid forced sync reload
+            const orderIdx = allOrders.findIndex(o => o._id === orderId);
+            if (orderIdx !== -1) {
+                if (!allOrders[orderIdx].slotId) {
+                    allOrders[orderIdx].slotId = {};
+                }
+                allOrders[orderIdx].slotId.batchNo = newBatch;
+            }
+
+            // Hide modal
+            const modalEl = document.getElementById('orderDetailModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+
+            // Refresh table view
+            renderTable();
+
+        } catch (error) {
+            console.error("Save order batch error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Allotment Sync Failed',
+                text: error.message,
+                background: '#1a1a1a',
+                color: '#fff',
+                confirmButtonColor: '#ff6b6b'
+            });
+        }
     };
 
     function escapeHtml(str) {

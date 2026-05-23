@@ -47,6 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!response.ok) {
                 if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('role');
+                    localStorage.removeItem('permissions');
+                    localStorage.removeItem('name');
                     window.location.href = "./index.html";
                     return;
                 }
@@ -102,13 +106,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 roleLabel = "Assessor";
             }
 
-            // Affiliate details for Franchise
+            // Affiliate details for Franchise & Assessor specialization
             let details = "<span class='opacity-50'>—</span>";
             if (u.role === "franchise") {
                 details = `
                     <div style="font-size: 0.85rem;">
                         <span class="text-warning">Code:</span> <code>${u.referralCode || "N/A"}</code><br>
                         <span class="text-warning">Comm:</span> <span>${u.commissionPercent || 20}%</span>
+                    </div>
+                `;
+            } else if (u.role === "assessor") {
+                details = `
+                    <div style="font-size: 0.85rem;">
+                        <span class="text-warning">Specialization:</span> <strong style="color: #9b59b6;">${u.assessorType || "General Assessor"}</strong>
                     </div>
                 `;
             }
@@ -128,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${sourceBadge}</td>
                     <td>${details}</td>
                     <td style="text-align: center; white-space: nowrap;">
-                        <button class="thm-btn" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}')">
+                        <button class="thm-btn" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}', '${u.assessorType || ''}')">
                             <i class="fas fa-edit me-1"></i> Edit
                         </button>
                         <button class="thm-btn" style="background:#ff6b6b; border-color:#ff6b6b; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px;" onclick="confirmDeleteUser('${u.id}', '${escapedName}', '${u.email}')">
@@ -141,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Modal Control: Edit Existing Staff Role
-    window.openRoleModal = (id, name, email, role, commission, phone, permissionsStr = "") => {
+    window.openRoleModal = (id, name, email, role, commission, phone, permissionsStr = "", assessorType = "") => {
         modalTitle.innerHTML = `<i class="fas fa-user-edit me-2"></i> Update Account Role`;
         modalUserId.value = id;
         modalUserEmail.value = email;
@@ -169,9 +179,16 @@ document.addEventListener("DOMContentLoaded", () => {
             cb.checked = permissions.includes(cb.value);
         });
 
+        // Reset and check assessor specializations
+        const assessorRadios = document.querySelectorAll('input[name="assessorType"]');
+        assessorRadios.forEach(radio => {
+            radio.checked = (radio.value === assessorType);
+        });
+
         // Toggle groups
         commissionGroup.style.display = (role === "franchise") ? "block" : "none";
         document.getElementById("permissionsGroup").style.display = (role === "admin") ? "block" : "none";
+        document.getElementById("assessorGroup").style.display = (role === "assessor") ? "block" : "none";
 
         roleModalOverlay.style.display = "flex";
     };
@@ -200,7 +217,15 @@ document.addEventListener("DOMContentLoaded", () => {
         modalCommission.value = 20;
         commissionGroup.style.display = "none";
         document.getElementById("permissionsGroup").style.display = "none";
+        document.getElementById("assessorGroup").style.display = "block"; // Default assessor role shows assessor group
+        
+        // Reset inputs
         document.querySelectorAll('input[name="permissions"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('input[name="assessorType"]').forEach(radio => radio.checked = false);
+        
+        // Default GTO selection for assessor promote
+        const gtoRadio = document.querySelector('input[name="assessorType"][value="GTO"]');
+        if (gtoRadio) gtoRadio.checked = true;
 
         roleModalOverlay.style.display = "flex";
     };
@@ -210,10 +235,11 @@ document.addEventListener("DOMContentLoaded", () => {
         roleForm.reset();
     };
 
-    // Toggle Franchise/Admin inputs on role change
+    // Toggle Franchise/Admin/Assessor inputs on role change
     modalUserRole.addEventListener("change", (e) => {
         commissionGroup.style.display = (e.target.value === "franchise") ? "block" : "none";
         document.getElementById("permissionsGroup").style.display = (e.target.value === "admin") ? "block" : "none";
+        document.getElementById("assessorGroup").style.display = (e.target.value === "assessor") ? "block" : "none";
     });
     
     // Super Admin auto-check toggle
@@ -250,6 +276,13 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        // Extract assessor specialization
+        let assessorTypeVal = null;
+        if (targetRole === 'assessor') {
+            const selectedRadio = document.querySelector('input[name="assessorType"]:checked');
+            assessorTypeVal = selectedRadio ? selectedRadio.value : null;
+        }
+
         try {
             Swal.fire({
                 title: "Configuring Role...",
@@ -278,7 +311,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     phone: phone,
                     password: password,
                     commissionPercent: Number(commission),
-                    permissions: permissions
+                    permissions: permissions,
+                    assessorType: assessorTypeVal
                 })
             });
 

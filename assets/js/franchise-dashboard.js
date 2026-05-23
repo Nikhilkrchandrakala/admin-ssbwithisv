@@ -63,6 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 if (response.status === 401) {
                     localStorage.removeItem('token');
+                    localStorage.removeItem('role');
+                    localStorage.removeItem('permissions');
+                    localStorage.removeItem('name');
                     window.location.href = './index.html';
                     return;
                 }

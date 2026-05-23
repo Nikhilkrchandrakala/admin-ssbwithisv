@@ -19,11 +19,66 @@ document.addEventListener("DOMContentLoaded", () => {
     const profilePhone = document.getElementById("profilePhone");
     const roleBadgeContainer = document.getElementById("roleBadgeContainer");
 
-    // Password Form Elements
-    const profilePasswordForm = document.getElementById("profilePasswordForm");
-    const currentPassword = document.getElementById("currentPassword");
-    const newPassword = document.getElementById("newPassword");
-    const confirmNewPassword = document.getElementById("confirmNewPassword");
+    // Avatar Upload Elements
+    const avatarFileInput = document.getElementById("avatarFileInput");
+    const avatarOverlayBtn = document.getElementById("avatarOverlayBtn");
+    const profileAvatarImg = document.getElementById("profileAvatarImg");
+
+    // Load local profile avatar on load
+    const savedAvatar = localStorage.getItem("profile_avatar");
+    if (savedAvatar && profileAvatarImg) {
+        profileAvatarImg.src = savedAvatar;
+    }
+
+    // Avatar Upload Event Listeners
+    if (avatarOverlayBtn && avatarFileInput) {
+        avatarOverlayBtn.addEventListener("click", () => avatarFileInput.click());
+    }
+
+    if (avatarFileInput) {
+        avatarFileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // Limit size to 2MB to keep localStorage base64 string lightweight
+                if (file.size > 2 * 1024 * 1024) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "File Too Large",
+                        text: "Please select an image smaller than 2MB.",
+                        background: "#1a1a1a",
+                        color: "#fff",
+                        confirmButtonColor: "#ff6b6b"
+                    });
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const base64Data = evt.target.result;
+                    localStorage.setItem("profile_avatar", base64Data);
+                    if (profileAvatarImg) {
+                        profileAvatarImg.src = base64Data;
+                    }
+                    // Sync header avatar immediately
+                    if (typeof window.renderNavbar === "function") {
+                        window.renderNavbar();
+                    }
+                    Swal.fire({
+                        icon: "success",
+                        title: "Avatar Updated",
+                        text: "Your profile picture has been updated and synchronized across all dashboards!",
+                        background: "#1a1a1a",
+                        color: "#fff",
+                        confirmButtonColor: "#e0c214",
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+
 
     // Fetch and Render Profile
     async function loadProfile() {
@@ -47,6 +102,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!response.ok) {
                 if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('role');
+                    localStorage.removeItem('permissions');
+                    localStorage.removeItem('name');
                     window.location.href = "./index.html";
                     return;
                 }
@@ -60,21 +119,37 @@ document.addEventListener("DOMContentLoaded", () => {
             profileEmail.value = user.email || "";
             profilePhone.value = user.phone || "";
 
-            // Render Role Badge
+            // Render Role Badge labels
             let roleLabel = "Staff User";
             if (user.role === "admin") {
-                roleLabel = "System Admin";
+                if (user.permissions && user.permissions.includes("super_admin")) {
+                    roleLabel = "SUPER ADMIN";
+                } else {
+                    roleLabel = "System Admin";
+                }
             } else if (user.role === "franchise") {
                 roleLabel = "Franchise Partner";
             } else if (user.role === "assessor") {
                 roleLabel = "Assessor";
             }
 
-            roleBadgeContainer.innerHTML = `
-                <div class="profile-badge-display">
-                    <i class="fas fa-user-shield me-1"></i> ${roleLabel}
-                </div>
-            `;
+            if (roleBadgeContainer) {
+                roleBadgeContainer.innerHTML = `
+                    <div class="profile-badge-display">
+                        <i class="fas fa-user-shield me-1"></i> ${roleLabel}
+                    </div>
+                `;
+            }
+
+            // Populating UI Header Card Elements
+            const headerProfileName = document.getElementById("headerProfileName");
+            const roleSubtext = document.getElementById("roleSubtext");
+            if (headerProfileName) {
+                headerProfileName.textContent = user.name || "SSB Staff";
+            }
+            if (roleSubtext) {
+                roleSubtext.textContent = roleLabel;
+            }
 
             Swal.close();
         } catch (error) {
@@ -124,8 +199,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(result.error || "Failed to update profile");
             }
 
-            // If name was updated, synchronize in local storage to keep navbar header updated
+            // Sync updated details in local storage to keep navbar header updated
             localStorage.setItem("name", name);
+
+            // Update UI elements instantly
+            const headerProfileName = document.getElementById("headerProfileName");
+            if (headerProfileName) {
+                headerProfileName.textContent = name;
+            }
+
+            // Refresh top header navbar
+            if (typeof window.renderNavbar === "function") {
+                window.renderNavbar();
+            }
 
             Swal.fire({
                 icon: "success",
@@ -140,79 +226,6 @@ document.addEventListener("DOMContentLoaded", () => {
             Swal.fire({
                 icon: "error",
                 title: "Error",
-                text: error.message,
-                background: "#1a1a1a",
-                color: "#fff",
-                confirmButtonColor: "#ff6b6b"
-            });
-        }
-    });
-
-    // Submit password update
-    profilePasswordForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const curPass = currentPassword.value;
-        const newPass = newPassword.value;
-        const confPass = confirmNewPassword.value;
-
-        if (newPass !== confPass) {
-            Swal.fire({
-                icon: "warning",
-                title: "Passwords Do Not Match",
-                text: "The new passwords you entered do not match.",
-                background: "#1a1a1a",
-                color: "#fff",
-                confirmButtonColor: "#ff9f43"
-            });
-            return;
-        }
-
-        try {
-            Swal.fire({
-                title: "Updating Password...",
-                text: "Please wait.",
-                allowOutsideClick: false,
-                background: "#1a1a1a",
-                color: "#fff",
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            const response = await fetch(`${API_BASE}/api/profile/security`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    currentPassword: curPass,
-                    newPassword: newPass
-                })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || "Failed to update security password");
-            }
-
-            Swal.fire({
-                icon: "success",
-                title: "Password Updated",
-                text: "Your password has been changed successfully!",
-                background: "#1a1a1a",
-                color: "#fff",
-                confirmButtonColor: "#e0c214"
-            });
-
-            profilePasswordForm.reset();
-        } catch (error) {
-            console.error("Update Password Error:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Security Verification Failed",
                 text: error.message,
                 background: "#1a1a1a",
                 color: "#fff",

@@ -324,6 +324,155 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('openAddSlotModalBtn').addEventListener('click', openAddModal);
     document.getElementById('emptyAddSlotBtn').addEventListener('click', openAddModal);
 
+    // Global Course Pricing variables
+    const globalPricingForm = document.getElementById('globalPricingForm');
+    const pricingSyncIcon = document.getElementById('pricingSyncIcon');
+    let dbCourses = [];
+
+    // Fetch dynamic global prices
+    async function fetchGlobalPrices() {
+        try {
+            if (pricingSyncIcon) pricingSyncIcon.style.display = 'inline-block';
+            
+            const response = await fetch(`${API_BASE}/api/allCourses`);
+            if (!response.ok) throw new Error('Failed to fetch courses');
+            
+            dbCourses = await response.json();
+            
+            // Populate inputs if elements exist and lock them
+            dbCourses.forEach(course => {
+                if (course.courseId) {
+                    const input = document.getElementById(`price_${course.courseId}`);
+                    if (input) {
+                        input.value = course.price;
+                        input.disabled = true;
+                    }
+                    const btn = document.querySelector(`.edit-price-btn[data-target="price_${course.courseId}"]`);
+                    if (btn) {
+                        btn.innerHTML = '<i class="fas fa-edit me-1"></i> Edit';
+                        btn.style.background = 'var(--surface-light)';
+                        btn.style.borderColor = '#444';
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('Error loading global pricing:', err);
+        } finally {
+            if (pricingSyncIcon) pricingSyncIcon.style.display = 'none';
+        }
+    } // Refactor: Use standard disabled property toggle instead of hasAttribute / removeAttribute which gets out of sync
+
+    // Individual Edit button listeners to toggle input locks
+    document.querySelectorAll('.edit-price-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (input) {
+                const isCurrentlyDisabled = input.disabled;
+                if (isCurrentlyDisabled) {
+                    input.disabled = false;
+                    input.focus();
+                    btn.innerHTML = '<i class="fas fa-unlock-alt me-1"></i> Unlock';
+                    btn.style.background = 'rgba(224, 194, 20, 0.15)';
+                    btn.style.borderColor = 'var(--primary-gold)';
+                } else {
+                    input.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-edit me-1"></i> Edit';
+                    btn.style.background = 'var(--surface-light)';
+                    btn.style.borderColor = '#444';
+                }
+            }
+        });
+    });
+
+    // Save global prices
+    if (globalPricingForm) {
+        globalPricingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = getToken();
+            if (!token) return;
+
+            const saveBtn = document.getElementById('saveGlobalPricesBtn');
+            const originalBtnHtml = saveBtn.innerHTML;
+
+            // Collect only inputs that were active/unlocked by the admin
+            const updates = [];
+            const allModules = ['ssb_ppdt', 'psych', 'interview', 'group_testing', 'full_course'];
+            
+            allModules.forEach(key => {
+                const input = document.getElementById(`price_${key}`);
+                if (input && !input.disabled) {
+                    updates.push({ key, val: parseFloat(input.value) });
+                }
+            });
+
+            if (updates.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No Changes to Save',
+                    text: 'Please click the "Edit" button next to any course price to unlock and edit it.',
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: '#e0c214'
+                });
+                return;
+            }
+
+            try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saving...';
+
+                for (const update of updates) {
+                    const match = dbCourses.find(c => c.courseId === update.key);
+                    if (!match) continue;
+
+                    // Only update if value actually changed
+                    if (match.price === update.val) continue;
+
+                    const response = await fetch(`${API_BASE}/api/updateCourse/${match._id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ price: update.val })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to update price for ${match.title || update.key}`);
+                    }
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Prices Updated Globally!',
+                    text: 'Selected course module prices have been saved successfully.',
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: '#e0c214'
+                });
+
+                // Refresh prices to lock state and fetch updated db state
+                await fetchGlobalPrices();
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pricing Save Failed',
+                    text: err.message,
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: '#ff6b6b'
+                });
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalBtnHtml;
+            }
+        });
+    }
+
     // Init
     fetchAllBatches();
+    fetchGlobalPrices();
 });
