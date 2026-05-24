@@ -123,23 +123,30 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
     display: none;
-    align-items: center;
+    align-items: flex-start; /* Aligns to top for vertical scroll when tall */
     justify-content: center;
     z-index: 2000;
+    overflow-y: auto; /* Enable overlay scroll for taller modals */
+    padding: 40px 15px; /* Spacing for the modal box */
 }
 
 .admin-modal {
     background: var(--surface-dark);
     border: var(--border-gold);
     border-radius: var(--radius-md);
-    width: 90%;
-    max-width: 600px;
     padding: 30px;
     box-shadow: var(--shadow-lg);
     position: relative;
+}
+
+/* Custom Overlay-based Modals (Student Roster, Roles, Allotments) */
+.admin-modal-overlay .admin-modal {
+    width: 100%;
+    max-width: 600px;
+    margin: auto; /* Vertically and horizontally centers when content height allows */
 }
 
 .admin-modal-header {
@@ -155,6 +162,48 @@ body {
     color: var(--primary-gold);
     font-size: 1.5rem;
     margin: 0;
+}
+
+/* Responsive Modal Adjustments */
+@media (max-width: 767.98px) {
+    .admin-modal-overlay {
+        padding: 15px 10px;
+    }
+
+    .admin-modal {
+        padding: 20px 15px;
+    }
+
+    /* Stack double-column custom modals vertically and add dividers */
+    .admin-modal [class*="col-"].border-end {
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding-right: 0 !important;
+        padding-bottom: 20px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .admin-modal [class*="col-"].ps-4 {
+        padding-left: 0 !important;
+    }
+
+    /* Scale down large modal typography on phone */
+    .admin-modal-title {
+        font-size: 1.25rem;
+    }
+
+    /* Refine assessor badges inside modal for small screens */
+    .assessor-badge-stack .mini-badge {
+        flex-direction: column;
+        align-items: flex-start !important;
+        padding: 8px 12px !important;
+    }
+    
+    .assessor-badge-stack .mini-badge strong {
+        margin-top: 4px;
+        padding-left: 18px;
+        color: var(--primary-gold) !important;
+    }
 }
 
 /* Form Helper Styles */
