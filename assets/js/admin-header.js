@@ -264,6 +264,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
+            let psychBatteryLinkHtml = '';
+            if (role === 'assessor' || role === 'admin') {
+                psychBatteryLinkHtml = `<a href="#" class="admin-dashboard-link" id="psychBatteryHeaderLink">Psych Battery</a>`;
+            }
+
             navbar.innerHTML = `
                 <div class="admin-dashboard-left">
                     <img src="./assets/logo/ISV2.png" alt="SSB Seal" class="admin-navbar-seal" style="height: 38px; width: 38px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(224, 194, 20, 0.25)); margin-right: 5px;">
@@ -277,6 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="admin-dashboard-right">
                     ${contentDropdownHtml}
                     ${managementDropdownHtml}
+                    ${psychBatteryLinkHtml}
                     <a href="./Profile.html" class="admin-dashboard-link ${currentPath === 'Profile.html' ? 'active' : ''}">Profile</a>
                     <button id="logoutBtn">Logout</button>
                 </div>
@@ -298,6 +304,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const psychLink = document.getElementById('psychBatteryNavLink');
         if (psychLink) {
             psychLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const t = localStorage.getItem('token');
+                const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? 'http://localhost:5173'
+                    : 'https://psych.ssbwithisv.in';
+                window.open(`${baseUrl}?token=${t}`, '_blank');
+            });
+        }
+
+        const psychHeaderLink = document.getElementById('psychBatteryHeaderLink');
+        if (psychHeaderLink) {
+            psychHeaderLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 const t = localStorage.getItem('token');
                 const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
