@@ -47,8 +47,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Note: Assessor SSO redirect to PsychBattery happens at login time only (admin.js).
-    // We do NOT redirect assessors from here — they may be navigating back intentionally.
+    // Enforce Assessor restrictions - they should only see the Profile page
+    if (token && role === 'assessor') {
+        const pathLower = currentPath.toLowerCase();
+        if (pathLower !== 'profile.html' && pathLower !== 'index.html' && currentPath !== '') {
+            window.location.href = './Profile.html';
+            return;
+        }
+    }
 
     // Define page clearance mappings
     const PAGE_PERMISSIONS = {

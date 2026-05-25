@@ -33,21 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('permissions');
         localStorage.removeItem('name');
     } else if (existingToken && existingRole) {
-        if (existingRole === "admin") {
+        if (existingRole === "admin" || existingRole === "assessor") {
             window.location.href = "./Profile.html";
             return;
         } else if (existingRole === "franchise") {
             window.location.href = "./FranchiseDashboard.html";
             return;
-        } else if (existingRole === "assessor") {
-            // If an assessor lands back on the login page (e.g. after using "Back to Admin Panel"),
-            // clear the stale session and show the login form fresh.
-            // Do NOT auto-redirect assessors from the login page — they chose to come here.
-            localStorage.removeItem('token');
-            localStorage.removeItem('role');
-            localStorage.removeItem('permissions');
-            localStorage.removeItem('name');
-            // Fall through to show login form
         }
     }
 
@@ -110,16 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Role-based routing
-                if (result.role === "admin") {
+                if (result.role === "admin" || result.role === "assessor") {
                     window.location.href = "./Profile.html";
                 } else if (result.role === "franchise") {
                     window.location.href = "./FranchiseDashboard.html";
-                } else if (result.role === "assessor") {
-                    // SSO redirect to Psyche Battery assessor dashboard
-                    const psychBaseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                        ? 'http://localhost:5173'
-                        : 'https://psych.ssbwithisv.in';
-                    window.location.href = `${psychBaseUrl}?token=${result.token}`;
                 } else {
                     window.location.href = "/";
                 }
