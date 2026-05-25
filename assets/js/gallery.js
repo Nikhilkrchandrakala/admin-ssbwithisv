@@ -96,8 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Upload Logic
     galleryFiles.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
-        if (files.length > 20) {
-            Swal.fire({ icon: 'warning', title: 'Limit Exceeded', text: 'Max 20 images allowed per batch.', background: '#1a1a1a', color: '#fff' });
+        if (files.length > 10) {
+            Swal.fire({ icon: 'warning', title: 'Limit Exceeded', text: 'Max 10 images allowed per batch.', background: '#1a1a1a', color: '#fff' });
             galleryFiles.value = '';
             return;
         }
@@ -170,36 +170,65 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Edit Logic
+    // Edit Logic
     window.openEdit = (galleryId, url, text) => {
         currentEditData = { galleryId, url };
         editPreview.src = url;
         editCaptionText.value = text;
+        
+        // Reset file input and display name when opening edit modal
+        const editImageFileInput = document.getElementById('editImageFile');
+        if (editImageFileInput) editImageFileInput.value = '';
+        const editFileNameDisplay = document.getElementById('editFileNameDisplay');
+        if (editFileNameDisplay) editFileNameDisplay.innerText = '';
+        
         editModal.show();
     };
 
     saveEditBtn.addEventListener('click', async () => {
         if (!currentEditData) return;
         const token = getToken();
+        const editImageFile = document.getElementById('editImageFile');
+        const file = editImageFile ? editImageFile.files[0] : null;
 
         try {
             saveEditBtn.disabled = true;
             saveEditBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saving...';
 
-            const response = await fetch(`${API_BASE}/api/updateImageText/${currentEditData.galleryId}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    imageUrl: currentEditData.url,
-                    imageText: editCaptionText.value
-                })
-            });
+            let response;
+            if (file) {
+                // If replacing image, use FormData for multipart file upload
+                const formData = new FormData();
+                formData.append('imageUrl', currentEditData.url);
+                formData.append('imageText', editCaptionText.value);
+                formData.append('image', file);
 
-            if (!response.ok) throw new Error('Failed to update caption');
+                response = await fetch(`${API_BASE}/api/updateImageText/${currentEditData.galleryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                        // Note: do not set Content-Type header when uploading file using FormData!
+                    },
+                    body: formData
+                });
+            } else {
+                // Standard text-only update
+                response = await fetch(`${API_BASE}/api/updateImageText/${currentEditData.galleryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imageUrl: currentEditData.url,
+                        imageText: editCaptionText.value
+                    })
+                });
+            }
 
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Caption updated', showConfirmButton: false, timer: 2000, background: '#1a1a1a', color: '#fff' });
+            if (!response.ok) throw new Error('Failed to update asset');
+
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Asset updated successfully', showConfirmButton: false, timer: 2000, background: '#1a1a1a', color: '#fff' });
             editModal.hide();
             loadGallery();
 
@@ -262,6 +291,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modal Triggers
     document.getElementById('openUploadModal').addEventListener('click', () => uploadModal.show());
     document.getElementById('emptyUploadBtn').addEventListener('click', () => uploadModal.show());
+
+    // Replacement image change listener for visual preview in edit modal
+    const editImageFile = document.getElementById('editImageFile');
+    const editFileNameDisplay = document.getElementById('editFileNameDisplay');
+    if (editImageFile) {
+        editImageFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    editPreview.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+                if (editFileNameDisplay) editFileNameDisplay.innerText = `Replace with: ${file.name}`;
+            }
+        });
+    }
 
     loadGallery();
 });

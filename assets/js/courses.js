@@ -102,7 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
         slotsContainer.innerHTML = '';
         batches.forEach(slot => {
             const startDate = slot.startTime ? new Date(slot.startTime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
-            const price = slot.price ? `₹${Number(slot.price).toLocaleString('en-IN')}` : 'FREE';
+            let finalPriceVal = slot.price;
+            if (slot.isFullCourse) {
+                finalPriceVal = getCoursePrice('full_course', slot.price || 12499);
+            }
+            const price = finalPriceVal ? `₹${Number(finalPriceVal).toLocaleString('en-IN')}` : 'FREE';
             const max = slot.maxStudents || 0;
             const booked = slot.bookedStudents ? slot.bookedStudents.length : 0;
             const available = max - booked;
@@ -161,16 +165,82 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.manual-btn').forEach(btn => btn.addEventListener('click', () => openManualBookingModal(btn.dataset.id)));
     }
 
+    // Helper functions for dynamic pricing calculator in Create/Edit Batch Modal
+    function getCoursePrice(courseId, defaultPrice) {
+        if (dbCourses && Array.isArray(dbCourses)) {
+            const course = dbCourses.find(c => c.courseId === courseId);
+            if (course) return course.price;
+        }
+        return defaultPrice;
+    }
+
+    function updateModalCheckboxLabels() {
+        const modules = [
+            { id: 'ssb_ppdt', labelId: 'label_mod_ssb_ppdt', defaultPrice: 1999, name: 'Intro to SSB & PPDT' },
+            { id: 'psych', labelId: 'label_mod_psych', defaultPrice: 3499, name: 'Psychology Prep Program' },
+            { id: 'interview', labelId: 'label_mod_interview', defaultPrice: 2499, name: 'Interview & Mock Course' },
+            { id: 'group_testing', labelId: 'label_mod_group_testing', defaultPrice: 7999, name: 'GTO Course on VTX' }
+        ];
+
+        modules.forEach(mod => {
+            const label = document.getElementById(mod.labelId);
+            if (label) {
+                const price = getCoursePrice(mod.id, mod.defaultPrice);
+                label.innerHTML = `${mod.name} (<span class="text-warning font-weight-bold">₹${price.toLocaleString('en-IN')}</span>)`;
+            }
+        });
+    }
+
+    function toggleFullCourseUI(isInitialPopulate = false) {
+        const isFull = document.getElementById('isFullCourse').checked;
+        const priceInput = document.getElementById('price');
+        const container = document.getElementById('individualCoursesContainer');
+
+        if (isFull) {
+            if (container) container.style.display = 'none';
+            priceInput.disabled = true;
+            const fullPrice = getCoursePrice('full_course', 12499);
+            priceInput.value = fullPrice;
+        } else {
+            if (container) container.style.display = 'block';
+            priceInput.disabled = false;
+            if (!isInitialPopulate) {
+                document.querySelectorAll('.module-checkbox').forEach(cb => cb.checked = false);
+                priceInput.value = 0;
+            }
+        }
+    }
+
+    function calculateModuleSum() {
+        let sum = 0;
+        const modules = [
+            { id: 'ssb_ppdt', checkboxId: 'mod_ssb_ppdt', defaultPrice: 1999 },
+            { id: 'psych', checkboxId: 'mod_psych', defaultPrice: 3499 },
+            { id: 'interview', checkboxId: 'mod_interview', defaultPrice: 2499 },
+            { id: 'group_testing', checkboxId: 'mod_group_testing', defaultPrice: 7999 }
+        ];
+
+        modules.forEach(mod => {
+            const cb = document.getElementById(mod.checkboxId);
+            if (cb && cb.checked) {
+                sum += getCoursePrice(mod.id, mod.defaultPrice);
+            }
+        });
+
+        document.getElementById('price').value = sum;
+    }
+
     // Modal Logic
     const openAddModal = () => {
         currentEditId = null;
         document.getElementById('slotForm').reset();
         document.getElementById('slotId').value = '';
-        document.getElementById('isFullCourse').checked = false;
+        document.getElementById('isFullCourse').checked = true; // By default it will be ticked
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         document.getElementById('startDate').value = tomorrow.toISOString().slice(0, 10);
         document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i> Create New Batch';
+        toggleFullCourseUI(true); // Initialize toggle view
         slotModal.show();
     };
 
@@ -192,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('price').value = slot.price || 0;
             document.getElementById('isFullCourse').checked = slot.isFullCourse || false;
             document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i> Edit Batch Details';
+            toggleFullCourseUI(true); // Initialize toggle view with existing data
             slotModal.show();
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#1a1a1a', color: '#fff' });
@@ -278,7 +349,127 @@ document.addEventListener('DOMContentLoaded', () => {
         currentBookingSlotId = id;
         document.getElementById('manualUserId').value = '';
         document.getElementById('manualBookInfo').classList.add('d-none');
+        
+        // Reset manual checkboxes
+        document.querySelectorAll('.manual-module-checkbox').forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+        });
+
+        const slot = allBatches.find(b => b._id === id);
+        const container = document.getElementById('manualCoursesContainer');
+        if (slot && slot.isFullCourse) {
+            if (container) container.style.display = 'block';
+        } else {
+            if (container) container.style.display = 'none';
+        }
+
+        calculateManualModulePrice();
         manualBookModal.show();
+    }
+
+    function updateManualCheckboxLabels() {
+        const modules = [
+            { id: 'full_course', labelId: 'label_manual_mod_full_course', defaultPrice: 14999, name: 'Full 10-day SSB Hackathon' },
+            { id: 'ssb_ppdt', labelId: 'label_manual_mod_ssb_ppdt', defaultPrice: 1999, name: 'Intro to SSB & PPDT' },
+            { id: 'psych', labelId: 'label_manual_mod_psych', defaultPrice: 3499, name: 'Psychology Prep Program' },
+            { id: 'interview', labelId: 'label_manual_mod_interview', defaultPrice: 2499, name: 'Interview & Mock Course' },
+            { id: 'group_testing', labelId: 'label_manual_mod_group_testing', defaultPrice: 7999, name: 'GTO Course on VTX' }
+        ];
+
+        modules.forEach(mod => {
+            const label = document.getElementById(mod.labelId);
+            if (label) {
+                const price = getCoursePrice(mod.id, mod.defaultPrice);
+                label.innerHTML = `${mod.name} (<span class="text-warning font-weight-bold">₹${price.toLocaleString('en-IN')}</span>)`;
+            }
+        });
+    }
+
+    function toggleManualModules(changedId) {
+        const fullCourseCheckbox = document.getElementById('manual_mod_full_course');
+        const otherCheckboxes = [
+            document.getElementById('manual_mod_ssb_ppdt'),
+            document.getElementById('manual_mod_psych'),
+            document.getElementById('manual_mod_interview'),
+            document.getElementById('manual_mod_group_testing')
+        ];
+
+        if (changedId === 'full_course') {
+            if (fullCourseCheckbox.checked) {
+                // If Full Course is checked, uncheck and disable all individual modules
+                otherCheckboxes.forEach(cb => {
+                    if (cb) {
+                        cb.checked = false;
+                        cb.disabled = true;
+                    }
+                });
+            } else {
+                // If Full Course is unchecked, enable all individual modules
+                otherCheckboxes.forEach(cb => {
+                    if (cb) {
+                        cb.disabled = false;
+                    }
+                });
+            }
+        } else {
+            // If any individual module is checked, disable full course
+            const anyChecked = otherCheckboxes.some(cb => cb && cb.checked);
+            if (anyChecked) {
+                if (fullCourseCheckbox) {
+                    fullCourseCheckbox.checked = false;
+                    fullCourseCheckbox.disabled = true;
+                }
+            } else {
+                if (fullCourseCheckbox) {
+                    fullCourseCheckbox.disabled = false;
+                }
+            }
+        }
+
+        calculateManualModulePrice();
+    }
+
+    function calculateManualModulePrice() {
+        const slot = allBatches.find(b => b._id === currentBookingSlotId);
+        if (!slot) return;
+
+        let basePrice = 0;
+        const fullCourseCheckbox = document.getElementById('manual_mod_full_course');
+        
+        if (slot.isFullCourse) {
+            const isFullChecked = fullCourseCheckbox && fullCourseCheckbox.checked;
+            const otherCheckboxes = [
+                { id: 'ssb_ppdt', cb: document.getElementById('manual_mod_ssb_ppdt'), defaultPrice: 1999 },
+                { id: 'psych', cb: document.getElementById('manual_mod_psych'), defaultPrice: 3499 },
+                { id: 'interview', cb: document.getElementById('manual_mod_interview'), defaultPrice: 2499 },
+                { id: 'group_testing', cb: document.getElementById('manual_mod_group_testing'), defaultPrice: 7999 }
+            ];
+
+            const checkedOthers = otherCheckboxes.filter(item => item.cb && item.cb.checked);
+
+            if (isFullChecked) {
+                basePrice = getCoursePrice('full_course', 14999);
+            } else if (checkedOthers.length === 4) {
+                // Apply Full Course bundle price automatically if all 4 individual courses are selected
+                basePrice = getCoursePrice('full_course', 14999);
+            } else {
+                let sum = 0;
+                checkedOthers.forEach(item => {
+                    sum += getCoursePrice(item.id, item.defaultPrice);
+                });
+                basePrice = sum;
+            }
+        } else {
+            basePrice = slot.price || 0;
+        }
+
+        const gst = basePrice * 0.18;
+        const total = basePrice + gst;
+
+        document.getElementById('manualBasePrice').innerText = `₹${basePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        document.getElementById('manualGstPrice').innerText = `₹${gst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        document.getElementById('manualTotalPrice').innerText = `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     document.getElementById('confirmManualBookBtn').addEventListener('click', async () => {
@@ -291,6 +482,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Compile selected modules
+        const selectedModules = [];
+        const slot = allBatches.find(b => b._id === currentBookingSlotId);
+        if (slot && slot.isFullCourse) {
+            if (document.getElementById('manual_mod_full_course').checked) {
+                selectedModules.push('full_course');
+            } else {
+                const otherCheckboxes = [
+                    { id: 'ssb_ppdt', cb: document.getElementById('manual_mod_ssb_ppdt') },
+                    { id: 'psych', cb: document.getElementById('manual_mod_psych') },
+                    { id: 'interview', cb: document.getElementById('manual_mod_interview') },
+                    { id: 'group_testing', cb: document.getElementById('manual_mod_group_testing') }
+                ];
+                otherCheckboxes.forEach(item => {
+                    if (item.cb && item.cb.checked) {
+                        selectedModules.push(item.id);
+                    }
+                });
+            }
+        }
+
+        if (slot && slot.isFullCourse && selectedModules.length === 0) {
+            Swal.fire({ icon: 'warning', text: 'Please select at least one course/module.', background: '#1a1a1a', color: '#fff' });
+            return;
+        }
+
         try {
             const btn = document.getElementById('confirmManualBookBtn');
             btn.disabled = true;
@@ -299,7 +516,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_BASE}/api/manualBookSlot/${currentBookingSlotId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ email: identifier })
+                body: JSON.stringify({ 
+                    email: identifier,
+                    selectedModules: selectedModules
+                })
             });
 
             if (!response.ok) {
@@ -323,6 +543,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nextMonthBtn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderMonthView(); });
     document.getElementById('openAddSlotModalBtn').addEventListener('click', openAddModal);
     document.getElementById('emptyAddSlotBtn').addEventListener('click', openAddModal);
+
+    // Dynamic modal checkbox event listeners
+    const isFullCourseCheckbox = document.getElementById('isFullCourse');
+    if (isFullCourseCheckbox) {
+        isFullCourseCheckbox.addEventListener('change', () => toggleFullCourseUI(false));
+    }
+
+    document.querySelectorAll('.module-checkbox').forEach(cb => {
+        cb.addEventListener('change', calculateModuleSum);
+    });
+
+    document.querySelectorAll('.manual-module-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            toggleManualModules(e.target.value);
+        });
+    });
 
     // Global Course Pricing variables
     const globalPricingForm = document.getElementById('globalPricingForm');
@@ -355,6 +591,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+
+            // Update modal checkboxes with live DB prices
+            updateModalCheckboxLabels();
+            updateManualCheckboxLabels();
         } catch (err) {
             console.error('Error loading global pricing:', err);
         } finally {

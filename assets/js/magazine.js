@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             card.innerHTML = `
                 <div class="cover-wrapper">
-                    <img src="${coverUrl}" class="cover-img" alt="Cover" onerror="this.src='https://via.placeholder.com/300x400/111/e0c214?text=Cover+Not+Found'">
+                    <img src="${coverUrl}" class="cover-img" alt="Cover" onerror="if (this.src.includes('${API_BASE}')) { this.src = this.src.replace('${API_BASE}', 'https://api.ssbwithisv.in'); } else { this.onerror = null; this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFlMWUxZSIvPjxyZWN0IHg9IjE1IiB5PSIxNSIgd2lkdGg9IjI3MCIgaGVpZ2h0PSIzNzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2UwYzIxNCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtZGFzaGFycmF5PSI0IDQiIG9wYWNpdHk9IjAuNCIvPjxwYXRoIGQ9Ik0xMTAgMTMwIGg4MCB2MTEwIGgtODAgeiBNMTMwIDEzMCB2MTEwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGMyMTQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9IjE1MCIgeT0iMjg1IiBmaWxsPSIjZTBjMjE0IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZm9udC13ZWlnaHQ9ImJvbGQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIxLjUiPlNTQiBESUdJVEFMPC90ZXh0Pjx0ZXh0IHg9IjE1MCIgeT0iMzE1IiBmaWxsPSIjODg4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgbGV0dGVyLXNwYWNpbmc9IjAuNSI+Q09WRVIgTk9UIEZPVU5EPC90ZXh0Pjwvc3ZnPg==\'; }">
                 </div>
                 <div class="magazine-details">
                     <span class="mag-tag">${mag.tags || 'Magazine'}</span>

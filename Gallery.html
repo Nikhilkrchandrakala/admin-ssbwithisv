@@ -103,7 +103,7 @@
                 <p class="text-muted mb-0">Visual storytelling for the SSB platform - Manage photos and captions</p>
             </div>
             <button class="thm-btn" id="openUploadModal">
-                <i class="fas fa-cloud-upload-alt me-2"></i> Bulk Upload
+                <i class="fas fa-cloud-upload-alt me-2"></i> Upload Images
             </button>
         </div>
 
@@ -137,7 +137,7 @@
                         <div class="mb-4">
                             <label class="admin-form-label">Select Source Files</label>
                             <input type="file" class="admin-input" id="galleryFiles" accept="image/*" multiple required>
-                            <div class="small opacity-50 mt-1">Maximum 20 images per upload batch. PNG, JPG or WEBP.</div>
+                            <div class="small opacity-50 mt-1">Maximum 10 images per upload batch. PNG, JPG or WEBP.</div>
                         </div>
                         <div id="uploadPreviews" class="d-flex flex-wrap gap-2 mb-4"></div>
                         <div id="captionsWrapper" style="display: none;">
@@ -163,8 +163,15 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <img id="editPreview" src="" class="rounded" style="max-height: 180px; width: 100%; object-fit: cover; border: 1px solid rgba(224,194,20,0.2);">
+                    <div class="text-center mb-3">
+                        <img id="editPreview" src="" class="rounded mb-2" style="max-height: 180px; width: 100%; object-fit: cover; border: 1px solid rgba(224,194,20,0.2);">
+                        <div style="position: relative;">
+                            <label class="thm-btn py-1 px-3" style="font-size: 0.75rem; cursor: pointer; display: inline-block;">
+                                <i class="fas fa-camera me-1"></i> Replace Image
+                                <input type="file" id="editImageFile" accept="image/*" style="display: none;">
+                            </label>
+                            <div class="small text-muted mt-1" id="editFileNameDisplay"></div>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="admin-form-label">Image Description</label>

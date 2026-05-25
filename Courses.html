@@ -283,6 +283,25 @@
                             <input type="checkbox" class="form-check-input" id="isFullCourse">
                             <label class="form-check-label admin-form-label" for="isFullCourse" style="margin-bottom: 0;">Is this the Full Course? (Allows Coupons & Bundled UI)</label>
                         </div>
+                        <div class="mb-3" id="individualCoursesContainer" style="display: none; padding-left: 2em; border-left: 3px solid var(--primary-gold); margin-top: 15px;">
+                            <label class="admin-form-label mb-2"><i class="fas fa-book-open me-1" style="color: var(--primary-gold);"></i> Select Included Modules</label>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input module-checkbox" id="mod_ssb_ppdt" value="ssb_ppdt">
+                                <label class="form-check-label text-white" style="font-size: 0.85rem;" for="mod_ssb_ppdt" id="label_mod_ssb_ppdt">Intro to SSB & PPDT (<span class="text-warning font-weight-bold">₹1,999</span>)</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input module-checkbox" id="mod_psych" value="psych">
+                                <label class="form-check-label text-white" style="font-size: 0.85rem;" for="mod_psych" id="label_mod_psych">Psychology Prep Program (<span class="text-warning font-weight-bold">₹3,499</span>)</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input module-checkbox" id="mod_interview" value="interview">
+                                <label class="form-check-label text-white" style="font-size: 0.85rem;" for="mod_interview" id="label_mod_interview">Interview & Mock Course (<span class="text-warning font-weight-bold">₹2,499</span>)</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input module-checkbox" id="mod_group_testing" value="group_testing">
+                                <label class="form-check-label text-white" style="font-size: 0.85rem;" for="mod_group_testing" id="label_mod_group_testing">GTO Course on VTX (<span class="text-warning font-weight-bold">₹7,999</span>)</label>
+                            </div>
+                        </div>
                         <div class="modal-footer px-0 pb-0 pt-3">
                             <button type="button" class="thm-btn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="thm-btn" id="saveSlotBtn">Save Batch</button>
@@ -307,6 +326,48 @@
                         <input type="text" class="admin-input" id="manualUserId" placeholder="Enter student identifier" required>
                         <small class="text-muted" style="font-size: 0.75rem;">Enter the registered student's email or system ID to book manually.</small>
                     </div>
+                    
+                    <!-- Course Modules Selector for Manual Booking -->
+                    <div class="mb-3" id="manualCoursesContainer" style="display: none; border-left: 3px solid var(--primary-gold); padding-left: 15px; margin-top: 15px;">
+                        <label class="admin-form-label mb-2"><i class="fas fa-book-open me-1" style="color: var(--primary-gold);"></i> Choose Course / Modules</label>
+                        <div class="form-check mb-2" style="padding-left: 1.5em;">
+                            <input type="checkbox" class="form-check-input manual-module-checkbox" id="manual_mod_full_course" value="full_course">
+                            <label class="form-check-label text-white" style="font-size: 0.85rem;" for="manual_mod_full_course" id="label_manual_mod_full_course">Full 10-day SSB Hackathon (<span class="text-warning font-weight-bold">₹14,999</span>)</label>
+                        </div>
+                        <div class="form-check mb-2" style="padding-left: 1.5em;">
+                            <input type="checkbox" class="form-check-input manual-module-checkbox" id="manual_mod_ssb_ppdt" value="ssb_ppdt">
+                            <label class="form-check-label text-white" style="font-size: 0.85rem;" for="manual_mod_ssb_ppdt" id="label_manual_mod_ssb_ppdt">Intro to SSB & PPDT (<span class="text-warning font-weight-bold">₹1,999</span>)</label>
+                        </div>
+                        <div class="form-check mb-2" style="padding-left: 1.5em;">
+                            <input type="checkbox" class="form-check-input manual-module-checkbox" id="manual_mod_psych" value="psych">
+                            <label class="form-check-label text-white" style="font-size: 0.85rem;" for="manual_mod_psych" id="label_manual_mod_psych">Psychology Prep Program (<span class="text-warning font-weight-bold">₹3,499</span>)</label>
+                        </div>
+                        <div class="form-check mb-2" style="padding-left: 1.5em;">
+                            <input type="checkbox" class="form-check-input manual-module-checkbox" id="manual_mod_interview" value="interview">
+                            <label class="form-check-label text-white" style="font-size: 0.85rem;" for="manual_mod_interview" id="label_manual_mod_interview">Interview & Mock Course (<span class="text-warning font-weight-bold">₹2,499</span>)</label>
+                        </div>
+                        <div class="form-check mb-2" style="padding-left: 1.5em;">
+                            <input type="checkbox" class="form-check-input manual-module-checkbox" id="manual_mod_group_testing" value="group_testing">
+                            <label class="form-check-label text-white" style="font-size: 0.85rem;" for="manual_mod_group_testing" id="label_manual_mod_group_testing">GTO Course on VTX (<span class="text-warning font-weight-bold">₹7,999</span>)</label>
+                        </div>
+                        
+                        <!-- Manual Booking Price Summary Breakdown -->
+                        <div class="price-summary-box mt-3 p-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                            <div class="d-flex justify-content-between mb-1" style="font-size: 0.8rem; opacity: 0.8; color: #fff;">
+                                <span>Base Price:</span>
+                                <span id="manualBasePrice">₹0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1" style="font-size: 0.8rem; opacity: 0.8; color: #fff;">
+                                <span>GST (18%):</span>
+                                <span id="manualGstPrice">₹0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2 border-top" style="font-size: 0.9rem; font-weight: bold; color: var(--primary-gold); border-color: rgba(255, 255, 255, 0.1) !important;">
+                                <span>Total Amount:</span>
+                                <span id="manualTotalPrice">₹0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div id="manualBookInfo" class="alert alert-secondary mt-2 d-none" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;"></div>
                     <div class="modal-footer px-0 pb-0 pt-3">
                         <button type="button" class="thm-btn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);" data-bs-dismiss="modal">Cancel</button>
