@@ -8,6 +8,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem("token");
 
     let allStudents = [];
+    let allAssessments = [];
+
+    async function loadAssessments() {
+        try {
+            const response = await fetch(`${API_BASE}/api/admin/assessments`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const data = await response.json();
+            allAssessments = data.assessments || [];
+        } catch (e) {
+            console.error("Failed to load active assessments:", e);
+        }
+    }
 
     // Elements
     const studentTableBody = document.getElementById("studentTableBody");
@@ -106,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     window.location.href = "./index.html";
                     return;
                 }
-                throw new Error("Failed to fetch historical candidate profiles");
+                throw new Error("Failed to fetch candidate profiles");
             }
 
             const data = await response.json();
@@ -117,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Load Students Error:", error);
             studentTableBody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center p-5 text-danger">
+                    <td colspan="9" class="text-center p-5 text-danger">
                         <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                         <p class="mb-0">Error loading database: ${error.message}</p>
                     </td>
@@ -131,9 +144,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (studentsList.length === 0) {
             studentTableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center p-5 opacity-50">
+                    <td colspan="9" class="text-center p-5 opacity-50">
                         <i class="fas fa-database fa-2x mb-3"></i>
-                        <p class="mb-0">No historical candidate records found.</p>
+                        <p class="mb-0">No candidate records found.</p>
                     </td>
                 </tr>
             `;
@@ -198,6 +211,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `<div class="d-flex flex-wrap gap-1">${assessorBadges}</div>` 
                 : `<span class="text-muted small">No allotments configured</span>`;
 
+            // Assigned Assessments rendering
+            const assignedAssessmentsList = s.assignedAssessments || [];
+            let assessmentsBadges = "";
+            if (assignedAssessmentsList.length === 0) {
+                assessmentsBadges = `<span class="text-muted small">None assigned</span>`;
+            } else {
+                assessmentsBadges = `<div class="d-flex flex-wrap gap-1">` + assignedAssessmentsList.map(aid => {
+                    const match = allAssessments.find(a => a._id.toString() === aid.toString());
+                    if (match) {
+                        const cleanTitle = match.title
+                            .replace("Psychological Test Battery - ", "")
+                            .replace("Psychological Test Battery ", "")
+                            .replace("Psychological Test ", "");
+                        return `
+                            <span class="badge" style="background: rgba(224, 194, 20, 0.1); border: 1px solid rgba(224, 194, 20, 0.2); color: var(--primary-gold); padding: 4px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 500;">
+                                <i class="fas fa-file-alt me-1"></i> ${escapeHtml(cleanTitle)}
+                            </span>
+                        `;
+                    }
+                    return "";
+                }).filter(Boolean).join("") + `</div>`;
+            }
+
             const escapedName = s.name.replace(/'/g, "\\'");
 
             return `
@@ -216,6 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td><span class="badge bg-warning border border-warning text-dark px-2 py-1 small" style="font-family: monospace; font-weight: 700;">${escapeHtml(s.chestNo) || "—"}</span></td>
                     <td><span style="font-size: 0.85rem; opacity: 0.7;">${joinedDate}</span></td>
                     <td>${inlineStageSelect}</td>
+                    <td>${assessmentsBadges}</td>
                     <td>${badgesContainer}</td>
                     <td style="text-align: center;">
                         <button class="action-btn" title="View Full Profile" onclick="openStudentModal('${s._id}')">
@@ -370,6 +407,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 }).join("");
             }
 
+            // 4. Populate Assigned Assessments Checkboxes
+            const assignedAssessmentsList = document.getElementById("assignedAssessmentsList");
+            if (assignedAssessmentsList) {
+                if (allAssessments.length === 0) {
+                    assignedAssessmentsList.innerHTML = `
+                        <div class="text-center p-3 opacity-40">
+                            <p class="small mb-0">No active assessments found in system</p>
+                        </div>
+                    `;
+                } else {
+                    const studentAssignedIds = (student.assignedAssessments || []).map(id => id.toString());
+                    assignedAssessmentsList.innerHTML = allAssessments.map(a => {
+                        const isChecked = studentAssignedIds.includes(a._id.toString());
+                        return `
+                            <div class="form-check">
+                                <input class="form-check-input assessment-checkbox" type="checkbox" value="${a._id}" id="assess_${a._id}" ${isChecked ? 'checked' : ''}>
+                                <label class="form-check-label text-white small" for="assess_${a._id}">
+                                    ${escapeHtml(a.title)} <span class="opacity-50">(${escapeHtml(a.type)} | ${a.duration || 0}m)</span>
+                                </label>
+                            </div>
+                        `;
+                    }).join("");
+                }
+            }
+
             // 2. Populate Allotted Assessors list
             const renderDetailAssessor = (assessor, label) => {
                 if (assessor) {
@@ -496,6 +558,12 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const chestNo = document.getElementById("editStudentChestNo")?.value.trim() || "";
 
+        // Gather all checked assessments
+        const assignedAssessments = [];
+        document.querySelectorAll(".assessment-checkbox:checked").forEach(cb => {
+            assignedAssessments.push(cb.value);
+        });
+
         try {
             Swal.fire({
                 title: "Saving Credentials...",
@@ -511,7 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, email, phone, batch, clinicalStage, chestNo })
+                body: JSON.stringify({ name, email, phone, batch, clinicalStage, chestNo, assignedAssessments })
             });
 
             const result = await response.json();
@@ -613,7 +681,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initial load
     if (token) {
-        loadStudents();
+        loadAssessments().then(() => loadStudents());
     } else {
         window.location.href = "./index.html";
     }
