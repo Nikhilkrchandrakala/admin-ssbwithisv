@@ -18,8 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Modal Elements
     const studentModalOverlay = document.getElementById("studentModalOverlay");
     const detailStudentAvatar = document.getElementById("detailStudentAvatar");
-    const detailStudentStage = document.getElementById("detailStudentStage");
-    const detailStudentJoined = document.getElementById("detailStudentJoined");
+    const detailStudentStageContainer = document.getElementById("detailStudentStageContainer");
     const detailAssessorStack = document.getElementById("detailAssessorStack");
     const detailCourseList = document.getElementById("detailCourseList");
 
@@ -28,8 +27,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const editStudentEmail = document.getElementById("editStudentEmail");
     const editStudentPhone = document.getElementById("editStudentPhone");
     const editStudentBatch = document.getElementById("editStudentBatch");
-    const editStudentStageSelect = document.getElementById("editStudentStageSelect");
     const editProfileForm = document.getElementById("editProfileForm");
+
+    // Exclusive Checkbox Logic matching Checkout/PerCourses
+    const checkboxFull = document.getElementById("mod_full_course");
+    const checkboxesOthers = [
+        document.getElementById("mod_ssb_ppdt"),
+        document.getElementById("mod_psych"),
+        document.getElementById("mod_interview"),
+        document.getElementById("mod_group_testing")
+    ];
+
+    if (checkboxFull) {
+        checkboxFull.addEventListener("change", () => {
+            if (checkboxFull.checked) {
+                checkboxesOthers.forEach(cb => { if (cb) { cb.checked = false; cb.disabled = true; } });
+            } else {
+                checkboxesOthers.forEach(cb => { if (cb) { cb.disabled = false; } });
+            }
+        });
+    }
+
+    checkboxesOthers.forEach(cb => {
+        if (cb) {
+            cb.addEventListener("change", () => {
+                if (checkboxesOthers.some(c => c && c.checked)) {
+                    if (checkboxFull) { checkboxFull.checked = false; checkboxFull.disabled = true; }
+                } else {
+                    if (checkboxFull) { checkboxFull.disabled = false; }
+                }
+            });
+        }
+    });
 
     function getInitials(name) {
         if (!name) return "ST";
@@ -77,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     window.location.href = "./index.html";
                     return;
                 }
-                throw new Error("Failed to fetch historical student profiles");
+                throw new Error("Failed to fetch historical candidate profiles");
             }
 
             const data = await response.json();
@@ -104,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <tr>
                     <td colspan="7" class="text-center p-5 opacity-50">
                         <i class="fas fa-database fa-2x mb-3"></i>
-                        <p class="mb-0">No historical student records found.</p>
+                        <p class="mb-0">No historical candidate records found.</p>
                     </td>
                 </tr>
             `;
@@ -124,21 +153,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 day: 'numeric'
             });
 
-            // Inline Stage selector setup
-            const stages = ["Screening", "Psychology", "GTO", "Interview", "Conference", "Completed"];
-            const currentStage = s.clinicalStage || "Screening";
-            
-            let optionsHtml = "";
-            stages.forEach(stg => {
-                const isSelected = stg === currentStage ? "selected" : "";
-                optionsHtml += `<option value="${stg}" ${isSelected}>${stg}</option>`;
-            });
+            // Course badge rendering
+            const stages = (s.clinicalStage || "full_course").split(",").map(st => st.trim()).filter(Boolean);
+            const stageColors = {
+                "full_course": "stage-val-full_course",
+                "ssb_ppdt": "stage-val-ssb_ppdt",
+                "psych": "stage-val-psych",
+                "interview": "stage-val-interview",
+                "group_testing": "stage-val-group_testing"
+            };
+            const stageTitles = {
+                "full_course": "Full Course",
+                "ssb_ppdt": "Intro & PPDT",
+                "psych": "Psychology",
+                "interview": "Interview",
+                "group_testing": "GTO Tasks"
+            };
 
-            const inlineStageSelect = `
-                <select class="stage-select-inline stage-val-${currentStage}" onchange="changeStudentStage('${s._id}', this.value, this)">
-                    ${optionsHtml}
-                </select>
-            `;
+            const inlineStageSelect = stages.map(st => {
+                const stageClass = stageColors[st] || "stage-val-full_course";
+                const stageLabel = stageTitles[st] || st;
+                return `
+                    <span class="stage-select-inline ${stageClass}" style="padding: 4px 10px; border-radius: 50px; font-size: 10px; display: inline-block; font-weight: 700; text-transform: uppercase; cursor: default; margin-right: 4px; margin-bottom: 4px;">
+                        ${stageLabel}
+                    </span>
+                `;
+            }).join("");
 
             // Assessor stack summary
             const renderAssessorLabel = (assessor, label) => {
@@ -173,6 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </td>
                     <td><code>${s.phone || "N/A"}</code></td>
                     <td><span class="badge bg-dark border border-secondary text-light px-2 py-1 small" style="font-family: monospace;">${escapeHtml(s.batch) || "—"}</span></td>
+                    <td><span class="badge bg-warning border border-warning text-dark px-2 py-1 small" style="font-family: monospace; font-weight: 700;">${escapeHtml(s.chestNo) || "—"}</span></td>
                     <td><span style="font-size: 0.85rem; opacity: 0.7;">${joinedDate}</span></td>
                     <td>${inlineStageSelect}</td>
                     <td>${badgesContainer}</td>
@@ -207,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const result = await response.json();
 
-            if (!response.ok) throw new Error(result.error || "Failed to update clinical stage");
+            if (!response.ok) throw new Error(result.error || "Failed to update Course");
 
             // Toast feedback
             const Toast = Swal.mixin({
@@ -222,7 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             Toast.fire({
                 icon: 'success',
-                title: 'Clinical stage updated!'
+                title: 'Course updated!'
             });
 
             // Update in-memory state
@@ -231,10 +272,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 allStudents[studentIdx].clinicalStage = newStage;
             }
         } catch (error) {
-            console.error("Change Stage Error:", error);
+            console.error("Change Course Error:", error);
             Swal.fire({
                 icon: "error",
-                title: "Failed to Update Stage",
+                title: "Failed to Update Course",
                 text: error.message,
                 background: "#1a1a1a",
                 color: "#fff",
@@ -272,7 +313,29 @@ document.addEventListener("DOMContentLoaded", () => {
             editStudentEmail.value = student.email || "";
             editStudentPhone.value = student.phone || "";
             editStudentBatch.value = student.batch || "";
-            editStudentStageSelect.value = student.clinicalStage || "Screening";
+
+            // Populate Checkboxes according to split stages list
+            const activeStages = (student.clinicalStage || "full_course").split(",").map(st => st.trim()).filter(Boolean);
+            const allModules = ["full_course", "ssb_ppdt", "psych", "interview", "group_testing"];
+            allModules.forEach(mod => {
+                const el = document.getElementById(`mod_${mod}`);
+                if (el) {
+                    el.checked = activeStages.includes(mod);
+                    el.disabled = false;
+                }
+            });
+
+            // Re-apply disabled properties based on selection
+            if (activeStages.includes("full_course")) {
+                checkboxesOthers.forEach(cb => { if (cb) cb.disabled = true; });
+            } else if (activeStages.some(st => st !== "full_course")) {
+                if (checkboxFull) checkboxFull.disabled = true;
+            }
+            
+            const editStudentChestNo = document.getElementById("editStudentChestNo");
+            if (editStudentChestNo) {
+                editStudentChestNo.value = student.chestNo || "";
+            }
             
             const initials = getInitials(student.name);
             const avatarEl = document.getElementById("detailStudentAvatar");
@@ -284,26 +347,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Stage badge color
-            const currentStage = student.clinicalStage || "Screening";
-            let stageClass = "stage-screening";
-            if (currentStage === "Psychology") stageClass = "stage-psychology";
-            else if (currentStage === "GTO") stageClass = "stage-gto";
-            else if (currentStage === "Interview") stageClass = "stage-interview";
-            else if (currentStage === "Conference") stageClass = "stage-conference";
-            else if (currentStage === "Completed") stageClass = "stage-completed";
-
-            detailStudentStage.className = `badge ${stageClass}`;
-            detailStudentStage.innerText = currentStage;
-
-            const joinedDate = new Date(student.createdAt).toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            detailStudentJoined.innerText = joinedDate;
+            // Render course badges into container as chips
+            if (detailStudentStageContainer) {
+                const stageColors = {
+                    "full_course": "stage-screening",
+                    "ssb_ppdt": "stage-conference",
+                    "psych": "stage-psychology",
+                    "interview": "stage-interview",
+                    "group_testing": "stage-gto"
+                };
+                const stageTitles = {
+                    "full_course": "Full Course",
+                    "ssb_ppdt": "Intro & PPDT",
+                    "psych": "Psychology",
+                    "interview": "Interview",
+                    "group_testing": "GTO Tasks"
+                };
+                detailStudentStageContainer.innerHTML = activeStages.map(st => {
+                    const stageClass = stageColors[st] || "stage-screening";
+                    const stageLabel = stageTitles[st] || st;
+                    return `<span class="badge ${stageClass}">${stageLabel}</span>`;
+                }).join("");
+            }
 
             // 2. Populate Allotted Assessors list
             const renderDetailAssessor = (assessor, label) => {
@@ -417,7 +482,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const email = editStudentEmail.value.trim();
         const phone = editStudentPhone.value.trim();
         const batch = editStudentBatch.value.trim();
-        const clinicalStage = editStudentStageSelect.value;
+        
+        // Gather all checked modules
+        const checkedModules = [];
+        const allModulesList = ["full_course", "ssb_ppdt", "psych", "interview", "group_testing"];
+        allModulesList.forEach(mod => {
+            const el = document.getElementById(`mod_${mod}`);
+            if (el && el.checked) {
+                checkedModules.push(mod);
+            }
+        });
+        const clinicalStage = checkedModules.length > 0 ? checkedModules.join(",") : "full_course";
+        
+        const chestNo = document.getElementById("editStudentChestNo")?.value.trim() || "";
 
         try {
             Swal.fire({
@@ -434,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, email, phone, batch, clinicalStage })
+                body: JSON.stringify({ name, email, phone, batch, clinicalStage, chestNo })
             });
 
             const result = await response.json();
@@ -444,7 +521,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Swal.fire({
                 icon: "success",
                 title: "Profile Saved!",
-                text: "Student profile credentials updated successfully.",
+                text: "Candidate profile credentials updated successfully.",
                 background: "#1a1a1a",
                 color: "#fff",
                 timer: 1500,
@@ -485,6 +562,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const password = document.getElementById("addStudentPassword").value;
         const batch = document.getElementById("addStudentBatch").value.trim();
         const clinicalStage = document.getElementById("addStudentStage").value;
+        const chestNo = document.getElementById("addStudentChestNo")?.value.trim() || "";
 
         try {
             Swal.fire({
@@ -501,16 +579,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, email, phone, password, batch, clinicalStage })
+                body: JSON.stringify({ name, email, phone, password, batch, clinicalStage, chestNo })
             });
 
             const result = await response.json();
 
-            if (!response.ok) throw new Error(result.error || "Failed to create student trainee");
+            if (!response.ok) throw new Error(result.error || "Failed to create candidate trainee");
 
             Swal.fire({
                 icon: "success",
-                title: "Student Added!",
+                title: "Candidate Added!",
                 text: "The trainee record has been saved successfully in the database.",
                 background: "#1a1a1a",
                 color: "#fff",
@@ -532,113 +610,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
     });
-
-    // REC Candidates Logic
-    let allCandidates = [];
-
-    async function loadCandidates() {
-        try {
-            const candidateTableBody = document.getElementById("candidateTableBody");
-            if (!candidateTableBody) return;
-
-            candidateTableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center p-5">
-                        <div class="spinner-border text-warning" role="status"></div>
-                        <p class="mt-3 mb-0 opacity-70">Fetching historical REC candidates from database...</p>
-                    </td>
-                </tr>
-            `;
-
-            const response = await fetch(`${API_BASE}/api/allCandidates`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to fetch recommended candidates");
-            }
-
-            const result = await response.json();
-            allCandidates = result.data || result || [];
-
-            renderCandidateTable(allCandidates);
-        } catch (error) {
-            console.error("Load Candidates Error:", error);
-            const candidateTableBody = document.getElementById("candidateTableBody");
-            if (candidateTableBody) {
-                candidateTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center p-5 text-danger">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                            <p class="mb-0">Error loading recommended candidates: ${error.message}</p>
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-    }
-
-    function renderCandidateTable(candidatesList) {
-        const candidateTableBody = document.getElementById("candidateTableBody");
-        if (!candidateTableBody) return;
-
-        if (candidatesList.length === 0) {
-            candidateTableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center p-5 opacity-50">
-                        <i class="fas fa-trophy fa-2x mb-3"></i>
-                        <p class="mb-0">No historical REC candidates found.</p>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        candidateTableBody.innerHTML = candidatesList.map(c => {
-            const date = new Date(c.createdAt).toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-
-            const statusClass = c.status === 'active' ? 'status-paid' : 'status-pending';
-
-            return `
-                <tr>
-                    <td>
-                        <img src="${c.img}" alt="${escapeHtml(c.name)}" class="avatar-circle" style="width: 45px; height: 45px;" onerror="this.outerHTML='<div class=&quot;avatar-circle&quot; style=&quot;width:45px; height:45px;&quot;>${getInitials(c.name)}</div>'">
-                    </td>
-                    <td><strong style="color: var(--primary-gold); font-size: 0.95rem;">${escapeHtml(c.name)}</strong></td>
-                    <td><code style="color: var(--text-white); opacity:0.8;">${escapeHtml(c.entry)}</code></td>
-                    <td>${escapeHtml(c.board)}</td>
-                    <td><span class="status-badge ${statusClass}">${escapeHtml(c.status) || 'active'}</span></td>
-                    <td><span style="font-size: 0.85rem; opacity: 0.7;">${date}</span></td>
-                </tr>
-            `;
-        }).join("");
-    }
-
-    // Bind Search Input for Candidates
-    const candidateSearch = document.getElementById("candidateSearch");
-    if (candidateSearch) {
-        candidateSearch.addEventListener("input", () => {
-            const query = candidateSearch.value.toLowerCase().trim();
-            const filtered = allCandidates.filter(c => {
-                return c.name.toLowerCase().includes(query) ||
-                       c.entry.toLowerCase().includes(query) ||
-                       c.board.toLowerCase().includes(query);
-            });
-            renderCandidateTable(filtered);
-        });
-    }
-
-    // Bind tab clicks/shown events to trigger loading
-    const recCandidatesTab = document.getElementById("recCandidatesTab");
-    if (recCandidatesTab) {
-        recCandidatesTab.addEventListener("shown.bs.tab", () => {
-            loadCandidates();
-        });
-    }
 
     // Initial load
     if (token) {

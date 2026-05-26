@@ -236,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 contentLinks.push(`<a href="./candidate.html" class="admin-dashboard-link ${currentPath === 'candidate.html' ? 'active' : ''}">REC Candidates</a>`);
             }
 
-            // MANAGEMENT LINKS: Franchise, Coupons, Leads, Roles & Permissions, Psyche Battery, Courses, Total Sales
+            // MANAGEMENT LINKS: Franchise, Coupons, Leads, Roles & Permissions, Courses, Total Sales
             const managementLinks = [];
             if (hasPermission('courses')) {
                 managementLinks.push(`<a href="./Courses.html" class="admin-dashboard-link ${currentPath === 'Courses.html' ? 'active' : ''}">Courses</a>`);
@@ -257,14 +257,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 managementLinks.push(`<a href="./RolesManagement.html" class="admin-dashboard-link ${currentPath === 'RolesManagement.html' ? 'active' : ''}">Roles & Permissions</a>`);
             }
             if (hasPermission('students')) {
-                managementLinks.push(`<a href="./StudentRoster.html" class="admin-dashboard-link ${currentPath === 'StudentRoster.html' ? 'active' : ''}">Student Database</a>`);
+                managementLinks.push(`<a href="./StudentRoster.html" class="admin-dashboard-link ${currentPath === 'StudentRoster.html' ? 'active' : ''}">Candidate Database</a>`);
             }
             if (hasPermission('allotment')) {
-                managementLinks.push(`<a href="./Allotment.html" class="admin-dashboard-link ${currentPath === 'Allotment.html' ? 'active' : ''}">Candidate Allotment</a>`);
+                managementLinks.push(`<a href="./Allotment.html" class="admin-dashboard-link ${currentPath === 'Allotment.html' ? 'active' : ''}">Assessor Allotment</a>`);
             }
-            if (hasPermission('psych_battery')) {
-                managementLinks.push(`<a href="#" class="admin-dashboard-link" id="psychBatteryNavLink">Psyche Battery</a>`);
-            }
+
 
             let contentDropdownHtml = '';
             if (contentLinks.length > 0) {
@@ -296,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let psychBatteryLinkHtml = '';
             if (role === 'assessor' || role === 'admin') {
-                psychBatteryLinkHtml = `<a href="#" class="admin-dashboard-link" id="psychBatteryHeaderLink">Psych Battery</a>`;
+                psychBatteryLinkHtml = `<a href="#" class="admin-dashboard-link" id="psychBatteryHeaderLink">Candidate Evaluation</a>`;
             }
 
             navbar.innerHTML = `
@@ -331,17 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        const psychLink = document.getElementById('psychBatteryNavLink');
-        if (psychLink) {
-            psychLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                const t = localStorage.getItem('token');
-                const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                    ? 'http://localhost:5173'
-                    : 'https://psych.ssbwithisv.in';
-                window.open(`${baseUrl}?token=${t}`, '_blank');
-            });
-        }
+
 
         const psychHeaderLink = document.getElementById('psychBatteryHeaderLink');
         if (psychHeaderLink) {

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candidate Allotment & Schedule - SSB Admin</title>
+    <title>Assessor Allotment & Schedule - SSB Admin</title>
     <link rel="icon" type="image/png" href="./assets/logo/ISV2.png">
 
     <!-- Bootstrap 5 CSS -->
@@ -129,12 +129,11 @@
             display: inline-block;
         }
 
-        .stage-screening { background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.3); }
-        .stage-psychology { background: rgba(155, 89, 182, 0.15); color: #9b59b6; border: 1px solid rgba(155, 89, 182, 0.3); }
-        .stage-gto { background: rgba(230, 126, 34, 0.15); color: #e67e22; border: 1px solid rgba(230, 126, 34, 0.3); }
+        .stage-full_course { background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.3); }
+        .stage-ssb_ppdt { background: rgba(26, 188, 156, 0.15); color: #1abc9c; border: 1px solid rgba(26, 188, 156, 0.3); }
+        .stage-psych { background: rgba(155, 89, 182, 0.15); color: #9b59b6; border: 1px solid rgba(155, 89, 182, 0.3); }
         .stage-interview { background: rgba(241, 196, 15, 0.15); color: #f1c40f; border: 1px solid rgba(241, 196, 15, 0.3); }
-        .stage-conference { background: rgba(26, 188, 156, 0.15); color: #1abc9c; border: 1px solid rgba(26, 188, 156, 0.3); }
-        .stage-completed { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); }
+        .stage-group_testing { background: rgba(230, 126, 34, 0.15); color: #e67e22; border: 1px solid rgba(230, 126, 34, 0.3); }
 
         .load-indicator {
             font-size: 10px;
@@ -169,7 +168,7 @@
     <div class="container" style="max-width: 1400px; margin: 40px auto; padding: 0 20px;">
         <div class="admin-page-header">
             <div class="header-left">
-                <h1 class="admin-page-title"><i class="fas fa-tasks me-2"></i> Candidate Allotment & Management</h1>
+                <h1 class="admin-page-title"><i class="fas fa-tasks me-2"></i> Assessor Allotment & Management</h1>
                 <p class="text-muted mb-0">Allot specific GTO, TO, Psych, or IO assessors to active training candidates</p>
             </div>
         </div>
@@ -214,15 +213,14 @@
                         </select>
                     </div>
                     <div class="d-flex gap-2 align-items-center">
-                        <span class="text-muted small">STAGE FILTER:</span>
-                        <select id="stageFilter" class="admin-input" style="width: 180px; padding: 8px 15px;">
-                            <option value="all">All Stages</option>
-                            <option value="Screening">Screening</option>
-                            <option value="Psychology">Psychology</option>
-                            <option value="GTO">GTO Tasks</option>
-                            <option value="Interview">Personal Interview</option>
-                            <option value="Conference">Board Conference</option>
-                            <option value="Completed">Completed</option>
+                        <span class="text-muted small">COURSE FILTER:</span>
+                        <select id="stageFilter" class="admin-input" style="width: 220px; padding: 8px 15px;">
+                            <option value="all">All Courses</option>
+                            <option value="full_course">Full 10-day SSB Hackathon</option>
+                            <option value="ssb_ppdt">Intro to SSB & PPDT</option>
+                            <option value="psych">Psychology Prep Program</option>
+                            <option value="interview">Interview & Mock Course</option>
+                            <option value="group_testing">GTO Course on VTX</option>
                         </select>
                     </div>
                 </div>
@@ -235,19 +233,20 @@
                         <tr>
                             <th>Candidate</th>
                             <th>Batch</th>
-                            <th>Clinical Stage</th>
-                            <th>Psych Assessor</th>
-                            <th>GTO Assessor</th>
-                            <th>TO Assessor</th>
-                            <th>IO Assessor</th>
+                            <th>Chest</th>
+                            <th>Course</th>
+                            <th>Psych</th>
+                            <th>GTO</th>
+                            <th>TO</th>
+                            <th>IO</th>
                             <th style="width: 130px; text-align: center;">Allot</th>
                         </tr>
                     </thead>
                     <tbody id="allotmentTableBody">
                         <tr>
-                            <td colspan="8" class="text-center p-5">
+                            <td colspan="9" class="text-center p-5">
                                 <div class="spinner-border text-warning" role="status"></div>
-                                <p class="mt-3 mb-0 opacity-70">Fetching active student allotment profiles...</p>
+                                <p class="mt-3 mb-0 opacity-70">Fetching active assessor allotment profiles...</p>
                             </td>
                         </tr>
                     </tbody>
@@ -275,8 +274,9 @@
                             <div id="modalStudentAvatar" class="avatar-circle">SC</div>
                             <div>
                                 <h4 id="modalStudentName" class="mb-1" style="font-size: 1.15rem; font-weight: 700;">—</h4>
-                                <span class="badge stage-screening" id="modalStudentStage">Screening</span>
+                                <span class="badge stage-badge stage-full_course" id="modalStudentStage">Full Course</span>
                                 <span class="badge bg-dark border border-secondary text-light ms-1" id="modalStudentBatch" style="font-family: monospace;">—</span>
+                                <span class="badge bg-warning border border-warning text-dark ms-1" id="modalStudentChestNo" style="font-family: monospace; font-weight: 700; display: none;">—</span>
                             </div>
                         </div>
 

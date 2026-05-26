@@ -94,5 +94,70 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    const contactForm = document.getElementById('contactSettingsForm');
+    const whatsappInput = document.getElementById('whatsappNumberInput');
+    const callInput = document.getElementById('callNumberInput');
+
+    const fetchContactSettings = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/api/contactSettings`);
+            const data = await response.json();
+
+            if (response.ok && data) {
+                whatsappInput.value = data.whatsappNumber || '';
+                callInput.value = data.callNumber || '';
+            } else {
+                throw new Error('Failed to load contact settings');
+            }
+        } catch (error) {
+            console.error('Error fetching contact settings:', error);
+        }
+    };
+
+    if (contactForm) {
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = getToken();
+            if (!token) return;
+
+            const updatedSettings = {
+                whatsappNumber: whatsappInput.value,
+                callNumber: callInput.value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/contactSettings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updatedSettings),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Contact settings updated successfully',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                    fetchContactSettings();
+                } else {
+                    throw new Error(result.message || 'Update failed');
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Save Failed', text: error.message, background: '#1a1a1a', color: '#fff' });
+            }
+        });
+    }
+
     fetchEntries();
+    fetchContactSettings();
 });

@@ -149,14 +149,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `<img src="${s.profileImage}" alt="${s.name}" class="avatar-circle" onerror="this.outerHTML='<div class=&quot;avatar-circle&quot;>${initials}</div>'">`
                 : `<div class="avatar-circle">${initials}</div>`;
 
-            // Stage rendering
-            let stageClass = "stage-screening";
-            let stageLabel = s.clinicalStage || "Screening";
-            if (stageLabel === "Psychology") stageClass = "stage-psychology";
-            else if (stageLabel === "GTO") stageClass = "stage-gto";
-            else if (stageLabel === "Interview") stageClass = "stage-interview";
-            else if (stageLabel === "Conference") stageClass = "stage-conference";
-            else if (stageLabel === "Completed") stageClass = "stage-completed";
+            // Course rendering
+            const stages = (s.clinicalStage || "full_course").split(",").map(st => st.trim()).filter(Boolean);
+            const stageColors = {
+                "full_course": "stage-full_course",
+                "ssb_ppdt": "stage-ssb_ppdt",
+                "psych": "stage-psych",
+                "interview": "stage-interview",
+                "group_testing": "stage-group_testing"
+            };
+            const stageTitles = {
+                "full_course": "Full Course",
+                "ssb_ppdt": "Intro & PPDT",
+                "psych": "Psychology",
+                "interview": "Interview",
+                "group_testing": "GTO Tasks"
+            };
+
+            const inlineStageSelect = stages.map(st => {
+                const stageClass = stageColors[st] || "stage-full_course";
+                const stageLabel = stageTitles[st] || st;
+                return `<span class="stage-badge ${stageClass}" style="margin-right: 4px; margin-bottom: 4px; display: inline-block;">${stageLabel}</span>`;
+            }).join("");
 
             // Assessor rendering
             const renderAssessorCell = (assessor, label) => {
@@ -185,13 +199,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </td>
                     <td><span class="badge bg-dark border border-secondary text-light px-2 py-1 small" style="font-family: monospace;">${escapeHtml(s.batch) || "—"}</span></td>
-                    <td><span class="stage-badge ${stageClass}">${stageLabel}</span></td>
+                    <td><span class="badge bg-warning border border-warning text-dark px-2 py-1 small" style="font-family: monospace; font-weight: 700;">${escapeHtml(s.chestNo) || "—"}</span></td>
+                    <td>${inlineStageSelect}</td>
                     <td>${psychCell}</td>
                     <td>${gtoCell}</td>
                     <td>${toCell}</td>
                     <td>${ioCell}</td>
                     <td style="text-align: center;">
-                        <button class="action-btn" title="Allot Assessors" onclick="openAllotmentModal('${s._id}', '${escapedName}', '${s.email}', '${s.phone || ''}', '${stageLabel}', '${stageClass}', '${s.profileImage || ''}', '${s.assignedPsych?._id || ''}', '${s.assignedGTO?._id || ''}', '${s.assignedTO?._id || ''}', '${s.assignedIO?._id || ''}', '${s.batch || ''}')">
+                        <button class="action-btn" title="Allot Assessors" onclick="openAllotmentModal('${s._id}', '${escapedName}', '${s.email}', '${s.phone || ''}', '${s.clinicalStage || 'full_course'}', '${s.profileImage || ''}', '${s.assignedPsych?._id || ''}', '${s.assignedGTO?._id || ''}', '${s.assignedTO?._id || ''}', '${s.assignedIO?._id || ''}', '${s.batch || ''}', '${s.chestNo || ''}')">
                             <i class="fas fa-clipboard-list"></i>
                         </button>
                     </td>
@@ -239,18 +254,58 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Open Modal
-    window.openAllotmentModal = (id, name, email, phone, stage, stageClass, avatarUrl, psychId, gtoId, toId, ioId, batch) => {
+    window.openAllotmentModal = (id, name, email, phone, clinicalStage, avatarUrl, psychId, gtoId, toId, ioId, batch, chestNo) => {
         modalStudentId.value = id;
         modalStudentName.innerText = name;
         modalStudentEmail.value = email;
         modalStudentPhone.value = phone || "N/A";
         
-        modalStudentStage.innerText = stage;
-        modalStudentStage.className = `stage-badge ${stageClass}`;
+        const stageColors = {
+            "full_course": "stage-full_course",
+            "ssb_ppdt": "stage-ssb_ppdt",
+            "psych": "stage-psych",
+            "interview": "stage-interview",
+            "group_testing": "stage-group_testing"
+        };
+        const stageTitles = {
+            "full_course": "Full Course",
+            "ssb_ppdt": "Intro & PPDT",
+            "psych": "Psychology",
+            "interview": "Interview",
+            "group_testing": "GTO Tasks"
+        };
+
+        const stages = (clinicalStage || "full_course").split(",").map(st => st.trim()).filter(Boolean);
+
+        // Render multiple chips adjacent to name inside container
+        if (modalStudentStage) {
+            const container = modalStudentStage.parentElement;
+            const existingBadges = container.querySelectorAll(".stage-badge");
+            existingBadges.forEach(b => b.remove());
+
+            const batchBadge = document.getElementById("modalStudentBatch");
+            stages.forEach(st => {
+                const badge = document.createElement("span");
+                badge.className = `badge stage-badge ${stageColors[st] || "stage-full_course"}`;
+                badge.style.marginRight = "4px";
+                badge.innerText = stageTitles[st] || st;
+                container.insertBefore(badge, batchBadge);
+            });
+        }
 
         const batchEl = document.getElementById("modalStudentBatch");
         if (batchEl) {
             batchEl.innerText = batch ? `${batch}` : "—";
+        }
+
+        const chestNoEl = document.getElementById("modalStudentChestNo");
+        if (chestNoEl) {
+            if (chestNo) {
+                chestNoEl.innerText = `Chest ${chestNo}`;
+                chestNoEl.style.display = "inline-block";
+            } else {
+                chestNoEl.style.display = "none";
+            }
         }
 
         const initials = getInitials(name);
