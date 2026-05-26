@@ -1,8 +1,32 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Self-healing: Capture and persist token from URL parameters (e.g. on redirects back from Psych Battery)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    if (urlToken) {
+        localStorage.setItem('token', urlToken);
+        try {
+            const base64Url = urlToken.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const payload = JSON.parse(jsonPayload);
+            if (payload.role) localStorage.setItem('role', payload.role);
+            if (payload.name) localStorage.setItem('name', payload.name);
+        } catch (e) {
+            console.error("Error decoding token in header:", e);
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
     const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
     const API_BASE = (typeof config !== 'undefined' && config?.backendBaseUrl) || 'http://localhost:5001';
+
+    // Dynamic login/logout redirect URL
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const loginRedirectUrl = isLocal ? './index.html' : 'https://admin.ssbwithisv.in';
 
     // Helper to verify JWT expiration clientside
     const isTokenExpired = (t) => {
@@ -28,13 +52,13 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.removeItem('role');
         localStorage.removeItem('permissions');
         localStorage.removeItem('name');
-        window.location.href = './index.html';
+        window.location.href = loginRedirectUrl;
         return;
     }
 
     // Redirect if not logged in (skip if already on login page)
     if (!token && !window.location.pathname.includes('index.html') && window.location.pathname !== '/admin/') {
-        window.location.href = './index.html';
+        window.location.href = loginRedirectUrl;
         return;
     }
 
@@ -130,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.removeItem('role');
                     localStorage.removeItem('permissions');
                     localStorage.removeItem('name');
-                    window.location.href = './index.html';
+                    window.location.href = loginRedirectUrl;
                     return null;
                 }
                 return res.json();
@@ -303,7 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.removeItem('role');
                 localStorage.removeItem('permissions');
                 localStorage.removeItem('name');
-                window.location.href = './index.html';
+                window.location.href = loginRedirectUrl;
             });
         }
 
