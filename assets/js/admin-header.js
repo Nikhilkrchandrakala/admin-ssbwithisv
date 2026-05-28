@@ -339,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
                     ? 'http://localhost:5173'
                     : 'https://psych.ssbwithisv.in';
-                window.open(`${baseUrl}?token=${t}`, '_blank');
+                window.location.href = `${baseUrl}?token=${t}`;
             });
         }
 
