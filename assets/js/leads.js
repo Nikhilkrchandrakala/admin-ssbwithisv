@@ -1,5 +1,6 @@
 /**
  * Leads Management JS
+ * Features: Pagination, Search, Delete, Elevate to Candidate
  * Standardized for the Charcoal/Gold Admin System
  */
 
@@ -10,6 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableLoading = document.getElementById("tableLoading");
     const emptyStateDiv = document.getElementById("emptyLeadsState");
     const infoSpan = document.getElementById("filterInfoMsg");
+    const paginationControls = document.getElementById("paginationControls");
+    const paginationInfo = document.getElementById("paginationInfo");
+    const paginationButtons = document.getElementById("paginationButtons");
+    const perPageSelect = document.getElementById("perPageSelect");
+    const searchInput = document.getElementById("searchInput");
     
     // Filter Elements
     const fromDateInput = document.getElementById("fromDate");
@@ -21,32 +27,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allLeadsData = [];
     let currentlyFilteredLeads = [];
+    let currentPage = 1;
+    let perPage = 25;
 
     const API_BASE = config?.backendBaseUrl || 'http://localhost:5001';
 
-    // Fetch leads from API
+    // =================== FETCH ===================
     async function fetchLeads() {
         try {
             tableLoading.style.display = 'block';
             leadsTable.style.display = 'none';
             emptyStateDiv.style.display = 'none';
+            paginationControls.style.display = 'none';
             
             const response = await fetch(`${API_BASE}/api/allLeads`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             
             const data = await response.json();
-            // Assuming backend returns array of leads. Sort by date desc
             allLeadsData = data.map(lead => ({ ...lead })).sort((a,b) => new Date(b.date) - new Date(a.date));
             currentlyFilteredLeads = [...allLeadsData];
+            currentPage = 1;
             
-            renderLeadsTable(currentlyFilteredLeads);
+            applySearchAndRender();
             updateInfoMsg();
-            
-            if (allLeadsData.length > 0) {
-                leadsTable.style.display = 'table';
-            } else {
-                emptyStateDiv.style.display = 'block';
-            }
         } catch (error) {
             console.error("Error fetching leads:", error);
             leadsTableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger p-4"><i class="fas fa-exclamation-triangle me-2"></i> Failed to load leads: ${error.message}</td></tr>`;
@@ -56,25 +59,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderLeadsTable(leadsArray) {
-        leadsTableBody.innerHTML = "";
-        if (!leadsArray || leadsArray.length === 0) {
+    // =================== SEARCH ===================
+    function getSearchFilteredLeads() {
+        const query = (searchInput.value || "").toLowerCase().trim();
+        if (!query) return currentlyFilteredLeads;
+
+        return currentlyFilteredLeads.filter(lead => {
+            const name = (lead.name || "").toLowerCase();
+            const email = (lead.email || "").toLowerCase();
+            const phone = (lead.phoneNumber || "").toLowerCase();
+            return name.includes(query) || email.includes(query) || phone.includes(query);
+        });
+    }
+
+    function applySearchAndRender() {
+        const searchResults = getSearchFilteredLeads();
+        currentPage = 1;
+        renderPage(searchResults);
+    }
+
+    // =================== PAGINATION ===================
+    function renderPage(displayLeads) {
+        if (!displayLeads || displayLeads.length === 0) {
             emptyStateDiv.style.display = 'block';
             leadsTable.style.display = 'none';
+            paginationControls.style.display = 'none';
             return;
         }
-        
+
         emptyStateDiv.style.display = 'none';
         leadsTable.style.display = 'table';
+        paginationControls.style.display = 'flex';
 
-        leadsArray.forEach((lead, index) => {
+        const totalPages = Math.ceil(displayLeads.length / perPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * perPage;
+        const endIdx = Math.min(startIdx + perPage, displayLeads.length);
+        const pageLeads = displayLeads.slice(startIdx, endIdx);
+
+        // Render table rows
+        leadsTableBody.innerHTML = "";
+        pageLeads.forEach((lead, index) => {
+            const globalIdx = startIdx + index + 1;
             const dateObj = new Date(lead.date);
             const formattedDate = dateObj.toLocaleDateString("en-GB", { day: '2-digit', month: '2-digit', year: 'numeric' });
             const formattedTime = dateObj.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td>${index + 1}</td>
+                <td>${globalIdx}</td>
                 <td>
                     <div class="date-badge">${formattedDate}</div>
                     <div style="font-size: 0.7rem; opacity: 0.5;">${formattedTime}</div>
@@ -82,24 +117,218 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span class="lead-name">${escapeHtml(lead.name || "—")}</span></td>
                 <td><span class="lead-contact"><i class="far fa-envelope me-1"></i> ${escapeHtml(lead.email || "—")}</span></td>
                 <td><span class="lead-contact"><i class="fas fa-phone-alt me-1"></i> ${escapeHtml(lead.phoneNumber || "—")}</span></td>
-                <td><span class="badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-weight: 400;">Magazine</span></td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="action-btn elevate-btn" title="Elevate to Candidate" data-id="${lead._id}" data-name="${escapeHtml(lead.name || '')}" data-email="${escapeHtml(lead.email || '')}">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                        <button class="action-btn delete-btn" title="Delete Lead" data-id="${lead._id}" data-name="${escapeHtml(lead.name || '')}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </td>
             `;
             leadsTableBody.appendChild(row);
         });
+
+        // Bind action buttons
+        leadsTableBody.querySelectorAll('.elevate-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleElevate(btn.dataset.id, btn.dataset.name, btn.dataset.email));
+        });
+        leadsTableBody.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleDelete(btn.dataset.id, btn.dataset.name));
+        });
+
+        // Render pagination info
+        paginationInfo.textContent = `Showing ${startIdx + 1}–${endIdx} of ${displayLeads.length} leads`;
+
+        // Render pagination buttons
+        renderPaginationButtons(totalPages);
     }
 
+    function renderPaginationButtons(totalPages) {
+        paginationButtons.innerHTML = "";
+
+        // Previous
+        const prevBtn = document.createElement("button");
+        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => { currentPage--; renderPage(getSearchFilteredLeads()); });
+        paginationButtons.appendChild(prevBtn);
+
+        // Page numbers (smart range)
+        const pages = getPageRange(currentPage, totalPages);
+        pages.forEach(p => {
+            if (p === "...") {
+                const ellipsis = document.createElement("button");
+                ellipsis.textContent = "…";
+                ellipsis.disabled = true;
+                ellipsis.style.cursor = "default";
+                paginationButtons.appendChild(ellipsis);
+            } else {
+                const pageBtn = document.createElement("button");
+                pageBtn.textContent = p;
+                if (p === currentPage) pageBtn.classList.add("active");
+                pageBtn.addEventListener("click", () => { currentPage = p; renderPage(getSearchFilteredLeads()); });
+                paginationButtons.appendChild(pageBtn);
+            }
+        });
+
+        // Next
+        const nextBtn = document.createElement("button");
+        nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => { currentPage++; renderPage(getSearchFilteredLeads()); });
+        paginationButtons.appendChild(nextBtn);
+    }
+
+    function getPageRange(current, total) {
+        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+        const pages = [];
+        pages.push(1);
+        if (current > 3) pages.push("...");
+        for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+            pages.push(i);
+        }
+        if (current < total - 2) pages.push("...");
+        pages.push(total);
+        return pages;
+    }
+
+    // =================== DELETE ===================
+    async function handleDelete(leadId, leadName) {
+        const result = await Swal.fire({
+            title: 'Delete Lead?',
+            html: `Are you sure you want to permanently delete <strong>${leadName || "this lead"}</strong>?<br><small class="text-muted">This action cannot be undone.</small>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ff6b6b',
+            cancelButtonColor: '#555',
+            confirmButtonText: '<i class="fas fa-trash-alt me-1"></i> Yes, Delete',
+            cancelButtonText: 'Cancel',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/api/leads/${leadId}`, { method: 'DELETE' });
+            const data = await res.json();
+
+            if (res.ok) {
+                // Remove from local arrays
+                allLeadsData = allLeadsData.filter(l => l._id !== leadId);
+                currentlyFilteredLeads = currentlyFilteredLeads.filter(l => l._id !== leadId);
+                applySearchAndRender();
+                updateInfoMsg();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted',
+                    text: data.message || 'Lead removed successfully.',
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.error || 'Failed to delete');
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Delete Failed',
+                text: err.message,
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    }
+
+    // =================== ELEVATE ===================
+    async function handleElevate(leadId, leadName, leadEmail) {
+        const result = await Swal.fire({
+            title: 'Elevate to Candidate?',
+            html: `
+                <p>This will create a registered user account for:</p>
+                <div style="background: rgba(46, 204, 113, 0.08); border: 1px solid rgba(46, 204, 113, 0.2); border-radius: 8px; padding: 12px; margin: 10px 0; text-align: left;">
+                    <strong style="color: #2ecc71;">${leadName || "—"}</strong><br>
+                    <small style="opacity: 0.7;">${leadEmail || "—"}</small>
+                </div>
+                <p style="font-size: 0.85rem; opacity: 0.7;">The user will be assigned a temporary password (<code>password123</code>) and can reset it via Forgot Password.</p>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2ecc71',
+            cancelButtonColor: '#555',
+            confirmButtonText: '<i class="fas fa-user-plus me-1"></i> Yes, Elevate',
+            cancelButtonText: 'Cancel',
+            background: '#1a1a1a',
+            color: '#fff'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/api/leads/${leadId}/elevate`, { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Lead Elevated!',
+                    html: `<strong>${data.user?.name || leadName}</strong> is now a registered candidate.<br><small>They can log in with temporary password <code>password123</code>.</small>`,
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: '#e0c214'
+                });
+            } else if (res.status === 409) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Already Registered',
+                    html: `This lead already has a registered account:<br><strong>${data.user?.name}</strong> (${data.user?.email})`,
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: '#e0c214'
+                });
+            } else {
+                throw new Error(data.error || 'Failed to elevate');
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Elevation Failed',
+                text: err.message,
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+        }
+    }
+
+    // =================== FILTERS ===================
     function updateInfoMsg() {
         const from = fromDateInput.value;
         const to = toDateInput.value;
+        const searchQuery = (searchInput.value || "").trim();
         
+        let parts = [];
         if (from || to) {
             let rangeText = "";
             if (from && to) rangeText = `${from} to ${to}`;
             else if (from) rangeText = `from ${from}`;
             else if (to) rangeText = `until ${to}`;
-            infoSpan.innerHTML = `<i class="fas fa-filter me-2"></i> Showing ${currentlyFilteredLeads.length} filtered leads (${rangeText})`;
+            parts.push(`filtered by date (${rangeText})`);
+        }
+        if (searchQuery) {
+            parts.push(`searching "${searchQuery}"`);
+        }
+        
+        const displayed = getSearchFilteredLeads().length;
+        if (parts.length > 0) {
+            infoSpan.innerHTML = `<i class="fas fa-filter me-2"></i> ${displayed} leads — ${parts.join(", ")}`;
         } else {
-            infoSpan.innerHTML = `<i class="fas fa-check-circle me-2"></i> Showing all ${allLeadsData.length} leads`;
+            infoSpan.innerHTML = `<i class="fas fa-check-circle me-2"></i> Total: ${allLeadsData.length} leads`;
         }
     }
 
@@ -115,7 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
         
-        renderLeadsTable(currentlyFilteredLeads);
+        currentPage = 1;
+        applySearchAndRender();
         updateInfoMsg();
         
         const Toast = Swal.mixin({
@@ -128,18 +358,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         Toast.fire({
             icon: 'info',
-            title: `Filter applied: ${currentlyFilteredLeads.length} results`
+            title: `Filter applied: ${getSearchFilteredLeads().length} results`
         });
     }
 
     function clearFilters() {
         fromDateInput.value = "";
         toDateInput.value = "";
+        searchInput.value = "";
         currentlyFilteredLeads = [...allLeadsData];
-        renderLeadsTable(currentlyFilteredLeads);
+        currentPage = 1;
+        applySearchAndRender();
         updateInfoMsg();
     }
 
+    // =================== EXPORT ===================
     function exportToExcel(leadsArray, fileName) {
         if (!leadsArray || leadsArray.length === 0) {
             Swal.fire({
@@ -178,35 +411,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // =================== HELPERS ===================
     function escapeHtml(str) {
         if (!str) return '';
-        return String(str).replace(/[&<>]/g, function (m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
+        return String(str).replace(/[&<>"']/g, function (m) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return map[m] || m;
         });
     }
 
-    // Event Listeners
+    // =================== EVENT LISTENERS ===================
     applyBtn.addEventListener("click", applyFilters);
     clearBtn.addEventListener("click", clearFilters);
     
+    searchInput.addEventListener("input", () => {
+        currentPage = 1;
+        applySearchAndRender();
+        updateInfoMsg();
+    });
+
+    perPageSelect.addEventListener("change", () => {
+        perPage = parseInt(perPageSelect.value);
+        currentPage = 1;
+        renderPage(getSearchFilteredLeads());
+    });
+    
     exportFilteredBtn.addEventListener("click", () => {
+        const exportData = getSearchFilteredLeads();
         const from = fromDateInput.value;
         const to = toDateInput.value;
         let name = "Leads_Export.xlsx";
         if (from && to) name = `Leads_${from}_to_${to}.xlsx`;
         else if (from) name = `Leads_from_${from}.xlsx`;
         else if (to) name = `Leads_until_${to}.xlsx`;
-        
-        exportToExcel(currentlyFilteredLeads, name);
+        exportToExcel(exportData, name);
     });
 
     globalExcelBtn.addEventListener("click", () => {
         exportToExcel(allLeadsData, "All_Leads_Complete.xlsx");
     });
 
-    // Initial Load
+    // =================== INIT ===================
     fetchLeads();
 });
