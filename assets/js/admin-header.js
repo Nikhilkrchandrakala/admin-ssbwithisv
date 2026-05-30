@@ -212,6 +212,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
                 <div class="admin-dashboard-right">
+                    <div class="admin-dropdown notification-dropdown">
+                        <div class="admin-dashboard-link dropdown-toggle" style="position:relative; padding: 0 15px;">
+                            <i class="fas fa-bell"></i>
+                            <span id="headerNotifBadge" style="display:none; position:absolute; top:-5px; right:0px; background:#e74c3c; color:white; font-size:10px; padding:2px 5px; border-radius:10px; font-weight:bold; line-height:1;">0</span>
+                        </div>
+                        <div class="dropdown-menu" id="headerNotifMenu" style="width: 300px; max-height: 400px; overflow-y: auto; padding: 0; left: auto; right: 0;">
+                            <div style="padding: 10px; font-size: 0.8rem; color: #aaa; text-align: center;">Loading notifications...</div>
+                        </div>
+                    </div>
                     <a href="./FranchiseDashboard.html" class="admin-dashboard-link ${currentPath === 'FranchiseDashboard.html' ? 'active' : ''}">Franchise Dashboard</a>
                     <a href="./Profile.html" class="admin-dashboard-link ${currentPath === 'Profile.html' ? 'active' : ''}">Profile</a>
                     <button id="logoutBtn">Logout</button>
@@ -308,6 +317,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
                 <div class="admin-dashboard-right">
+                    <div class="admin-dropdown notification-dropdown">
+                        <div class="admin-dashboard-link dropdown-toggle" style="position:relative; padding: 0 15px;">
+                            <i class="fas fa-bell"></i>
+                            <span id="headerNotifBadge" style="display:none; position:absolute; top:-5px; right:0px; background:#e74c3c; color:white; font-size:10px; padding:2px 5px; border-radius:10px; font-weight:bold; line-height:1;">0</span>
+                        </div>
+                        <div class="dropdown-menu" id="headerNotifMenu" style="width: 300px; max-height: 400px; overflow-y: auto; padding: 0; left: auto; right: 0;">
+                            <div style="padding: 10px; font-size: 0.8rem; color: #aaa; text-align: center;">Loading notifications...</div>
+                        </div>
+                    </div>
                     ${contentDropdownHtml}
                     ${managementDropdownHtml}
                     ${psychBatteryLinkHtml}
@@ -366,5 +384,53 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         });
+
+        // Notifications logic
+        function loadNotifications() {
+            if (!token) return;
+            fetch(`${API_BASE}/api/notifications`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    const unreadCount = data.filter(n => !n.isRead).length;
+                    const badge = document.getElementById('headerNotifBadge');
+                    const menu = document.getElementById('headerNotifMenu');
+                    
+                    if (badge) {
+                        badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+                        badge.textContent = unreadCount;
+                    }
+                    
+                    if (menu) {
+                        if (data.length === 0) {
+                            menu.innerHTML = `<div style="padding: 15px; font-size: 0.85rem; color: #aaa; text-align: center; background: var(--surface-light);">No notifications</div>`;
+                        } else {
+                            menu.innerHTML = data.map(n => `
+                                <div style="padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); background: ${n.isRead ? 'var(--surface-light)' : 'rgba(224, 194, 20, 0.08)'};">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                        <strong style="font-size: 0.85rem; color: ${n.isRead ? '#ccc' : '#fff'};">${n.title}</strong>
+                                        ${!n.isRead ? `<button onclick="markNotifRead('${n.id || n._id}')" style="background: none; border: none; color: var(--primary-gold); cursor: pointer; padding: 0 0 0 10px;" title="Mark as read"><i class="fas fa-check"></i></button>` : ''}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #aaa; line-height: 1.4;">${n.message}</div>
+                                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.3); margin-top: 6px;">${new Date(n.createdAt).toLocaleDateString()}</div>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                }
+            })
+            .catch(console.error);
+        }
+
+        window.markNotifRead = function(id) {
+            fetch(`${API_BASE}/api/notifications/${id}/read`, {
+                method: 'PUT',
+                headers: { "Authorization": `Bearer ${token}` }
+            }).then(() => loadNotifications());
+        };
+
+        loadNotifications();
     }
 });

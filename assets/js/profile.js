@@ -151,6 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 roleSubtext.textContent = roleLabel;
             }
 
+            // Render Notifications in the feed timeline
+            await loadProfileNotifications();
+
             Swal.close();
         } catch (error) {
             console.error("Load Profile Error:", error);
@@ -162,6 +165,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 color: "#fff",
                 confirmButtonColor: "#ff6b6b"
             });
+        }
+    }
+
+    async function loadProfileNotifications() {
+        const timeline = document.getElementById("profileNotificationsTimeline");
+        if (!timeline) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/notifications`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const notifications = await response.json();
+                if (notifications.length === 0) {
+                    timeline.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px;">No recent notifications</div>`;
+                } else {
+                    timeline.innerHTML = notifications.map(n => `
+                        <div class="notification-item ${n.isRead ? '' : 'unread'}">
+                            <div class="notification-marker">
+                                <i class="fas ${n.type === 'ALLOTMENT' ? 'fa-user-plus' : 'fa-info'}"></i>
+                            </div>
+                            <div class="notification-content" style="${!n.isRead ? 'border-color: rgba(224, 194, 20, 0.4); background: rgba(224, 194, 20, 0.05);' : ''}">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="notification-icon-col" style="${!n.isRead ? 'color: #fff;' : ''}">
+                                        ${n.title}
+                                    </div>
+                                    <span class="notification-relative-time">${new Date(n.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <p class="notification-desc">${n.message}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load profile notifications:", e);
+            timeline.innerHTML = `<div style="color: #ff6b6b; font-size: 13px; text-align: center; padding: 20px;">Failed to load notifications</div>`;
         }
     }
 
