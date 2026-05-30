@@ -212,19 +212,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Global function to delete a notification
     window.deleteNotification = async (id) => {
-        try {
-            const response = await fetch(`${API_BASE}/api/notifications/${id}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (response.ok) {
-                // Reload notifications upon successful deletion
-                loadProfileNotifications();
-            } else {
-                console.error("Failed to delete notification");
+        const result = await Swal.fire({
+            title: 'Delete Notification?',
+            text: "Are you sure you want to dismiss this?",
+            icon: 'warning',
+            showCancelButton: true,
+            background: '#1a1a1a',
+            color: '#fff',
+            confirmButtonColor: '#e0c214',
+            cancelButtonColor: '#ff6b6b',
+            confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`${API_BASE}/api/notifications/${id}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'Notification removed.',
+                        background: '#1a1a1a',
+                        color: '#fff',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    loadProfileNotifications();
+                } else {
+                    console.error("Failed to delete notification:", data);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: data.error || 'Failed to delete notification.',
+                        background: '#1a1a1a',
+                        color: '#fff'
+                    });
+                }
+            } catch (error) {
+                console.error("Delete notification error:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Network Error',
+                    text: 'Could not reach the server.',
+                    background: '#1a1a1a',
+                    color: '#fff'
+                });
             }
-        } catch (error) {
-            console.error("Delete notification error:", error);
         }
     };
 
