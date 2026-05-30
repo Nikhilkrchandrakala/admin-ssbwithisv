@@ -281,7 +281,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modalStudentStage) {
             const container = modalStudentStage.parentElement;
             const existingBadges = container.querySelectorAll(".stage-badge");
-            existingBadges.forEach(b => b.remove());
+            existingBadges.forEach(b => {
+                if (b.id !== "modalStudentStage") {
+                    b.remove();
+                }
+            });
+            modalStudentStage.style.display = "none";
 
             const batchBadge = document.getElementById("modalStudentBatch");
             stages.forEach(st => {
