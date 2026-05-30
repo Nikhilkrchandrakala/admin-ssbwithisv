@@ -1,6 +1,7 @@
 /**
  * Candidate Assessor Allotment JS
  * Standardized for the Charcoal/Gold Admin System
+ * With server-side pagination & enrollment filtering
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -10,6 +11,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let allStudents = [];
     let allAssessors = [];
     let isSubmittingAllotment = false;
+
+    // Pagination State
+    let currentPage = 1;
+    let totalPages = 1;
+    let totalCount = 0;
+    const PAGE_SIZE = 25;
+    let searchDebounceTimer = null;
 
     // Elements
     const allotmentTableBody = document.getElementById("allotmentTableBody");
@@ -38,6 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectTO = document.getElementById("selectTO");
     const selectIO = document.getElementById("selectIO");
 
+    // Pagination Elements
+    const paginationInfo = document.getElementById("paginationInfo");
+    const paginationControls = document.getElementById("paginationControls");
+
     function getInitials(name) {
         if (!name) return "ST";
         const parts = name.trim().split(" ");
@@ -45,12 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
 
-    function populateBatchFilter() {
+    function populateBatchFilter(batches) {
         const current = batchFilter.value;
-        const batches = [...new Set(allStudents.map(s => s.batch).filter(Boolean))].sort();
-        
         batchFilter.innerHTML = `<option value="all">All Batches</option>`;
-        batches.forEach(b => {
+        (batches || []).forEach(b => {
             const opt = document.createElement("option");
             opt.value = b;
             opt.textContent = `Batch ${b}`;
@@ -59,21 +69,38 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Fetch and Load Data
-    async function loadData() {
+    // Fetch and Load Data — server-side paginated
+    async function loadData(page = 1) {
         try {
+            currentPage = page;
+
             allotmentTableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center p-5">
+                    <td colspan="9" class="text-center p-5">
                         <div class="spinner-border text-warning" role="status"></div>
-                        <p class="mt-3 mb-0 opacity-70">Fetching active student allotment profiles...</p>
+                        <p class="mt-3 mb-0 opacity-70">Fetching enrolled candidate allotment profiles...</p>
                     </td>
                 </tr>
             `;
 
-            // Parallel fetches
+            // Build query params for server-side filtering
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: PAGE_SIZE
+            });
+
+            const searchQuery = allotmentSearch.value.trim();
+            if (searchQuery) params.set("search", searchQuery);
+
+            const stageVal = stageFilter.value;
+            if (stageVal && stageVal !== "all") params.set("clinicalStage", stageVal);
+
+            const batchVal = batchFilter.value;
+            if (batchVal && batchVal !== "all") params.set("batch", batchVal);
+
+            // Parallel fetches: paginated students + assessors
             const [studentsRes, assessorsRes] = await Promise.all([
-                fetch(`${API_BASE}/api/admin/students`, {
+                fetch(`${API_BASE}/api/admin/allotment-students?${params.toString()}`, {
                     headers: { "Authorization": `Bearer ${token}` }
                 }),
                 fetch(`${API_BASE}/api/admin/assessors`, {
@@ -98,16 +125,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             allStudents = studentsData.students || [];
             allAssessors = assessorsData.assessors || [];
+            totalCount = studentsData.totalCount || 0;
+            totalPages = studentsData.totalPages || 1;
+            currentPage = studentsData.page || 1;
 
-            populateBatchFilter();
+            populateBatchFilter(studentsData.batches);
             updateSummaryStats();
             renderTable(allStudents);
+            renderPagination();
             populateAssessorDropdowns();
         } catch (error) {
             console.error("Load Data Error:", error);
             allotmentTableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center p-5 text-danger">
+                    <td colspan="9" class="text-center p-5 text-danger">
                         <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                         <p class="mb-0">Error loading data: ${error.message}</p>
                     </td>
@@ -118,25 +149,89 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update Dashboard Metrics
     function updateSummaryStats() {
-        const total = allStudents.length;
         const allotted = allStudents.filter(s => 
             s.assignedPsych && s.assignedGTO && s.assignedTO && s.assignedIO
         ).length;
-        const unallotted = total - allotted;
 
-        statTotalStudents.innerText = total;
-        statAllottedStudents.innerText = allotted;
-        statUnallottedStudents.innerText = unallotted;
+        // Show total enrolled count from server, not just current page
+        statTotalStudents.innerText = totalCount;
+
+        // For allotted/unallotted, show page-level counts with a note
+        const pageAllotted = allotted;
+        const pageTotal = allStudents.length;
+        statAllottedStudents.innerText = pageAllotted;
+        statUnallottedStudents.innerText = pageTotal - pageAllotted;
     }
+
+    // Render Pagination Controls
+    function renderPagination() {
+        if (!paginationInfo || !paginationControls) return;
+
+        const startItem = totalCount === 0 ? 0 : ((currentPage - 1) * PAGE_SIZE) + 1;
+        const endItem = Math.min(currentPage * PAGE_SIZE, totalCount);
+
+        paginationInfo.innerHTML = `Showing <strong>${startItem}–${endItem}</strong> of <strong>${totalCount}</strong> enrolled candidates`;
+
+        if (totalPages <= 1) {
+            paginationControls.innerHTML = "";
+            return;
+        }
+
+        let html = "";
+
+        // Previous button
+        html += `<button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" 
+                    onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i> Prev
+                </button>`;
+
+        // Page numbers with ellipsis
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        if (startPage > 1) {
+            html += `<button class="pagination-btn" onclick="goToPage(1)">1</button>`;
+            if (startPage > 2) html += `<span class="pagination-ellipsis">…</span>`;
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                        onclick="goToPage(${i})">${i}</button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) html += `<span class="pagination-ellipsis">…</span>`;
+            html += `<button class="pagination-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+        }
+
+        // Next button
+        html += `<button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" 
+                    onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>`;
+
+        paginationControls.innerHTML = html;
+    }
+
+    // Global page navigation
+    window.goToPage = (page) => {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        loadData(page);
+    };
 
     // Render Student Rows in Table
     function renderTable(studentsList) {
         if (studentsList.length === 0) {
             allotmentTableBody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center p-5 opacity-50">
+                    <td colspan="9" class="text-center p-5 opacity-50">
                         <i class="fas fa-user-clock fa-2x mb-3"></i>
-                        <p class="mb-0">No student profiles found.</p>
+                        <p class="mb-0">No enrolled candidates found matching your filters.</p>
                     </td>
                 </tr>
             `;
@@ -394,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             closeAllotmentModal();
-            loadData(); // Reload table and active loads
+            loadData(currentPage); // Reload current page
         } catch (error) {
             console.error("Allotment Save Error:", error);
             Swal.fire({
@@ -410,34 +505,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Filtering and Searching
+    // Server-side filtering — reset to page 1 on filter change
     function applyFilters() {
-        const query = allotmentSearch.value.toLowerCase().trim();
-        const stage = stageFilter.value;
-        const batch = batchFilter.value;
-
-        const filtered = allStudents.filter(s => {
-            const matchesSearch = 
-                s.name.toLowerCase().includes(query) ||
-                s.email.toLowerCase().includes(query) ||
-                (s.phone && s.phone.toLowerCase().includes(query));
-
-            const matchesStage = (stage === "all") || (s.clinicalStage === stage);
-            const matchesBatch = (batch === "all") || (s.batch === batch);
-
-            return matchesSearch && matchesStage && matchesBatch;
-        });
-
-        renderTable(filtered);
+        loadData(1);
     }
 
-    allotmentSearch.addEventListener("input", applyFilters);
+    // Debounced search — waits 400ms after user stops typing
+    allotmentSearch.addEventListener("input", () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            loadData(1);
+        }, 400);
+    });
+
     stageFilter.addEventListener("change", applyFilters);
     batchFilter.addEventListener("change", applyFilters);
 
     // Init
     if (token) {
-        loadData();
+        loadData(1);
     } else {
         window.location.href = "./index.html";
     }
