@@ -191,7 +191,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="notification-icon-col" style="${!n.isRead ? 'color: #fff;' : ''}">
                                         ${n.title}
                                     </div>
-                                    <span class="notification-relative-time">${new Date(n.createdAt).toLocaleDateString()}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="notification-relative-time">${new Date(n.createdAt).toLocaleDateString()}</span>
+                                        <button class="btn btn-sm text-danger p-0 m-0" onclick="deleteNotification('${n._id}')" title="Delete Notification" style="background:none; border:none; outline:none; box-shadow:none;">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <p class="notification-desc">${n.message}</p>
                             </div>
@@ -204,6 +209,24 @@ document.addEventListener("DOMContentLoaded", () => {
             timeline.innerHTML = `<div style="color: #ff6b6b; font-size: 13px; text-align: center; padding: 20px;">Failed to load notifications</div>`;
         }
     }
+
+    // Global function to delete a notification
+    window.deleteNotification = async (id) => {
+        try {
+            const response = await fetch(`${API_BASE}/api/notifications/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (response.ok) {
+                // Reload notifications upon successful deletion
+                loadProfileNotifications();
+            } else {
+                console.error("Failed to delete notification");
+            }
+        } catch (error) {
+            console.error("Delete notification error:", error);
+        }
+    };
 
     // Submit details update
     profileDetailsForm.addEventListener("submit", async (e) => {
