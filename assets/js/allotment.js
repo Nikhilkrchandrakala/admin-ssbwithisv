@@ -268,17 +268,17 @@ document.addEventListener("DOMContentLoaded", () => {
             }).join("");
 
             // Assessor rendering
-            const renderAssessorCell = (assessor, label) => {
+            const renderAssessorCell = (assessor) => {
                 if (assessor) {
-                    return `<span class="assessor-pill"><span class="assessor-label">${label}:</span>${escapeHtml(assessor.name)}</span>`;
+                    return `<span class="assessor-pill">${escapeHtml(assessor.name)}</span>`;
                 }
-                return `<span class="assessor-pill not-allotted"><span class="assessor-label">${label}:</span>Unassigned</span>`;
+                return `<span class="assessor-pill not-allotted">Unassigned</span>`;
             };
 
-            const psychCell = renderAssessorCell(s.assignedPsych, "Psych");
-            const gtoCell = renderAssessorCell(s.assignedGTO, "GTO");
-            const toCell = renderAssessorCell(s.assignedTO, "TO");
-            const ioCell = renderAssessorCell(s.assignedIO, "IO");
+            const psychCell = renderAssessorCell(s.assignedPsych);
+            const gtoCell = renderAssessorCell(s.assignedGTO);
+            const toCell = renderAssessorCell(s.assignedTO);
+            const ioCell = renderAssessorCell(s.assignedIO);
 
             const escapedName = s.name.replace(/'/g, "\\'");
 
