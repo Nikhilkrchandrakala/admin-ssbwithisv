@@ -300,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${gtoCell}</td>
                     <td>${toCell}</td>
                     <td>${ioCell}</td>
-                    <td style="text-align: center; position: sticky; right: 0; background: var(--surface-dark); z-index: 1; border-left: 1px solid var(--border-color);">
+                    <td style="text-align: center; border-left: 1px solid var(--border-color);">
                         <button class="action-btn" title="Allot Assessors" onclick="openAllotmentModal('${s._id}', '${escapedName}', '${s.email}', '${s.phone || ''}', '${s.clinicalStage || 'full_course'}', '${s.profileImage || ''}', '${s.assignedPsych?._id || ''}', '${s.assignedGTO?._id || ''}', '${s.assignedTO?._id || ''}', '${s.assignedIO?._id || ''}', '${s.batch || ''}', '${s.chestNo || ''}')">
                             <i class="fas fa-clipboard-list"></i>
                         </button>
