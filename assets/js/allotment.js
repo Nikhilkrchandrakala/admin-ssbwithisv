@@ -451,6 +451,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const assignedTO = selectTO.value || null;
         const assignedIO = selectIO.value || null;
 
+        if (assignedPsych && assignedTO) {
+            Swal.fire({
+                icon: "error",
+                title: "Invalid Allotment",
+                text: "A candidate cannot be assigned to both a Psych Assessor and a Technical Assessor simultaneously. Please choose one.",
+                background: "#1a1a1a",
+                color: "#fff",
+                confirmButtonColor: "#ff6b6b"
+            });
+            isSubmittingAllotment = false;
+            return;
+        }
+
         try {
             Swal.fire({
                 title: "Saving Allotments...",
