@@ -46,6 +46,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectTO = document.getElementById("selectTO");
     const selectIO = document.getElementById("selectIO");
 
+    // Dynamic warning for mutual exclusivity
+    const checkExclusivity = (changed, other) => {
+        if (changed.value && other.value) {
+            Swal.fire({
+                icon: "warning",
+                title: "Mutually Exclusive",
+                text: "A candidate cannot have both a Psych Assessor and a Technical Assessor. Clearing the other selection.",
+                background: "#1a1a1a",
+                color: "#fff",
+                confirmButtonColor: "#ff6b6b"
+            });
+            other.value = "";
+        }
+    };
+    selectPsych.addEventListener('change', () => checkExclusivity(selectPsych, selectTO));
+    selectTO.addEventListener('change', () => checkExclusivity(selectTO, selectPsych));
+
     // Pagination Elements
     const paginationInfo = document.getElementById("paginationInfo");
     const paginationControls = document.getElementById("paginationControls");
