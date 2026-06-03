@@ -8,7 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem("token");
 
     let allStudents = [];
+    let filteredStudents = [];
     let allAssessments = [];
+    
+    // Pagination state
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     async function loadAssessments() {
         try {
@@ -124,8 +129,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
             allStudents = data.students || [];
+            filteredStudents = [...allStudents];
+            currentPage = 1;
             populateBatchFilter();
-            renderTable(allStudents);
+            renderPagination();
+            renderTableSlice();
         } catch (error) {
             console.error("Load Students Error:", error);
             studentTableBody.innerHTML = `
@@ -140,6 +148,82 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Render Student Table Rows
+    function renderTableSlice() {
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const slice = filteredStudents.slice(start, end);
+        
+        const infoEl = document.getElementById("paginationInfo");
+        if (infoEl) {
+            if (filteredStudents.length === 0) {
+                infoEl.textContent = "Showing 0 to 0 of 0 entries";
+            } else {
+                infoEl.textContent = `Showing ${start + 1} to ${Math.min(end, filteredStudents.length)} of ${filteredStudents.length} entries`;
+            }
+        }
+        
+        renderTable(slice);
+    }
+
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+        const ul = document.getElementById("paginationUl");
+        if (!ul) return;
+        
+        if (totalPages <= 1) {
+            ul.innerHTML = "";
+            return;
+        }
+
+        let html = '';
+        
+        // Prev button
+        html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage - 1}">&laquo; Prev</a>
+                 </li>`;
+        
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+
+        if (startPage > 1) {
+            html += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+            if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                     </li>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            html += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+
+        // Next button
+        html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage + 1}">Next &raquo;</a>
+                 </li>`;
+        
+        ul.innerHTML = html;
+        
+        ul.querySelectorAll('.page-link[data-page]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = parseInt(e.currentTarget.getAttribute('data-page'));
+                if (page >= 1 && page <= totalPages && page !== currentPage) {
+                    currentPage = page;
+                    renderPagination();
+                    renderTableSlice();
+                }
+            });
+        });
+    }
+
     function renderTable(studentsList) {
         if (studentsList.length === 0) {
             studentTableBody.innerHTML = `
@@ -516,7 +600,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const stage = stageFilter.value;
         const batch = batchFilter.value;
 
-        const filtered = allStudents.filter(s => {
+        filteredStudents = allStudents.filter(s => {
             const matchesSearch = 
                 s.name.toLowerCase().includes(query) ||
                 s.email.toLowerCase().includes(query) ||
@@ -528,7 +612,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return matchesSearch && matchesStage && matchesBatch;
         });
 
-        renderTable(filtered);
+        currentPage = 1;
+        renderPagination();
+        renderTableSlice();
     }
 
     studentSearch.addEventListener("input", applyFilters);
