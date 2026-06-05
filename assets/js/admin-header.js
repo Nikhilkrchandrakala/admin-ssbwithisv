@@ -302,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             let psychBatteryLinkHtml = '';
-            if (role === 'assessor' || role === 'admin') {
+            if (role === 'assessor' || (role === 'admin' && hasPermission('evaluations'))) {
                 psychBatteryLinkHtml = `<a href="#" class="admin-dashboard-link" id="psychBatteryHeaderLink">Candidate Evaluation</a>`;
             }
 
