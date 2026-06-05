@@ -371,7 +371,25 @@ document.addEventListener("DOMContentLoaded", () => {
                     dropdowns.forEach(other => {
                         if (other !== dropdown) other.classList.remove('show');
                     });
+                    
+                    const isOpening = !dropdown.classList.contains('show');
                     dropdown.classList.toggle('show');
+
+                    // If opening the notification dropdown, mark all as read
+                    if (isOpening && dropdown.classList.contains('notification-dropdown')) {
+                        const badge = document.getElementById('headerNotifBadge');
+                        if (badge && badge.style.display !== 'none') {
+                            fetch(`${API_BASE}/api/notifications/read-all`, {
+                                method: 'PUT',
+                                headers: { "Authorization": `Bearer ${token}` }
+                            })
+                            .then(() => {
+                                badge.style.display = 'none';
+                                loadNotifications(); // Refresh the menu to remove unread styles
+                            })
+                            .catch(console.error);
+                        }
+                    }
                 });
             }
         });
