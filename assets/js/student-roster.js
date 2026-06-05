@@ -289,21 +289,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (assignedAssessmentsList.length === 0) {
                 assessmentsBadges = `<span class="text-muted small">None assigned</span>`;
             } else {
-                assessmentsBadges = `<div class="d-flex flex-wrap gap-1">` + assignedAssessmentsList.map(aid => {
-                    const match = allAssessments.find(a => a._id.toString() === aid.toString());
-                    if (match) {
-                        const cleanTitle = match.title
-                            .replace("Psychological Test Battery - ", "")
-                            .replace("Psychological Test Battery ", "")
-                            .replace("Psychological Test ", "");
-                        return `
-                            <span class="badge" style="background: rgba(224, 194, 20, 0.1); border: 1px solid rgba(224, 194, 20, 0.2); color: var(--primary-gold); padding: 4px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 500;">
-                                <i class="fas fa-file-alt me-1"></i> ${escapeHtml(cleanTitle)}
-                            </span>
-                        `;
-                    }
-                    return "";
-                }).filter(Boolean).join("") + `</div>`;
+                assessmentsBadges = `<div class="d-flex flex-wrap gap-1">
+                    <span class="badge" style="background: rgba(224, 194, 20, 0.1); border: 1px solid rgba(224, 194, 20, 0.2); color: var(--primary-gold); padding: 4px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 500;">
+                        <i class="fas fa-file-alt me-1"></i> ${assignedAssessmentsList.length} Assigned
+                    </span>
+                </div>`;
             }
 
             const escapedName = s.name.replace(/'/g, "\\'");
