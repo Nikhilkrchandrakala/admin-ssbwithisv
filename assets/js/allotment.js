@@ -9,8 +9,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem("token");
 
     let allStudents = [];
+    let allAssessments = [];
     let allAssessors = [];
     let isSubmittingAllotment = false;
+
+    async function loadAssessments() {
+        try {
+            const response = await fetch(`${API_BASE}/api/admin/assessments`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const data = await response.json();
+            allAssessments = data.assessments || [];
+        } catch (e) {
+            console.error("Failed to load active assessments:", e);
+        }
+    }
 
     // Pagination State
     let currentPage = 1;
@@ -318,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${toCell}</td>
                     <td>${ioCell}</td>
                     <td style="text-align: center; border-left: 1px solid var(--border-color);">
-                        <button class="action-btn" title="Allot Assessors" onclick="openAllotmentModal('${s._id}', '${escapedName}', '${s.email}', '${s.phone || ''}', '${s.clinicalStage || 'full_course'}', '${s.profileImage || ''}', '${s.assignedPsych?._id || ''}', '${s.assignedGTO?._id || ''}', '${s.assignedTO?._id || ''}', '${s.assignedIO?._id || ''}', '${s.batch || ''}', '${s.chestNo || ''}')">
+                        <button class="action-btn" title="Allot Assessors" onclick="openAllotmentModal('${s._id}', '${escapedName}', '${s.email}', '${s.phone || ''}', '${s.clinicalStage || 'full_course'}', '${s.profileImage || ''}', '${s.assignedPsych?._id || ''}', '${s.assignedGTO?._id || ''}', '${s.assignedTO?._id || ''}', '${s.assignedIO?._id || ''}', '${s.batch || ''}', '${s.chestNo || ''}', '${escapeHtml(JSON.stringify(s.assignedAssessments || []))}')">
                             <i class="fas fa-clipboard-list"></i>
                         </button>
                     </td>
@@ -366,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Open Modal
-    window.openAllotmentModal = (id, name, email, phone, clinicalStage, avatarUrl, psychId, gtoId, toId, ioId, batch, chestNo) => {
+    window.openAllotmentModal = (id, name, email, phone, clinicalStage, avatarUrl, psychId, gtoId, toId, ioId, batch, chestNo, assignedAssessmentsStr) => {
         modalStudentId.value = id;
         modalStudentName.innerText = name;
         modalStudentEmail.value = email;
@@ -447,6 +460,38 @@ document.addEventListener("DOMContentLoaded", () => {
         selectTO.value = toId || "";
         selectIO.value = ioId || "";
 
+        // Populate Assigned Assessments Checkboxes
+        const assignedAssessmentsList = document.getElementById("assignedAssessmentsList");
+        if (assignedAssessmentsList) {
+            if (allAssessments.length === 0) {
+                assignedAssessmentsList.innerHTML = `
+                    <div class="text-center p-3 opacity-40">
+                        <p class="small mb-0">No active assessments found in system</p>
+                    </div>
+                `;
+            } else {
+                let studentAssignedIds = [];
+                try {
+                    const parsed = JSON.parse(assignedAssessmentsStr || "[]");
+                    studentAssignedIds = parsed.map((aId) => aId.toString());
+                } catch (e) {
+                    console.error("Failed to parse assignedAssessmentsStr", e);
+                }
+
+                assignedAssessmentsList.innerHTML = allAssessments.map(a => {
+                    const isChecked = studentAssignedIds.includes(a._id.toString());
+                    return `
+                        <div class="form-check">
+                            <input class="form-check-input assessment-checkbox" type="checkbox" value="${a._id}" id="assess_${a._id}" ${isChecked ? 'checked' : ''}>
+                            <label class="form-check-label text-white small" for="assess_${a._id}">
+                                ${escapeHtml(a.title)} <span class="opacity-50">(${escapeHtml(a.type)} | ${a.duration || 0}m)</span>
+                            </label>
+                        </div>
+                    `;
+                }).join("");
+            }
+        }
+
         allotmentModalOverlay.style.display = "flex";
     };
 
@@ -467,6 +512,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const assignedGTO = selectGTO.value || null;
         const assignedTO = selectTO.value || null;
         const assignedIO = selectIO.value || null;
+
+        const assignedAssessments = [];
+        document.querySelectorAll(".assessment-checkbox:checked").forEach(cb => {
+            assignedAssessments.push(cb.value);
+        });
+
+        if (assignedAssessments.length === 0 && allAssessments.length > 0) {
+            Swal.fire({
+                icon: "error",
+                title: "Assessment Required",
+                text: "A student MUST be allotted at least one Assessment.",
+                background: "#1a1a1a",
+                color: "#fff",
+                confirmButtonColor: "#ff6b6b"
+            });
+            isSubmittingAllotment = false;
+            return;
+        }
 
         if (assignedPsych && assignedTO) {
             Swal.fire({
@@ -501,7 +564,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     assignedPsych,
                     assignedGTO,
                     assignedTO,
-                    assignedIO
+                    assignedIO,
+                    assignedAssessments
                 })
             });
 
@@ -553,7 +617,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Init
     if (token) {
-        loadData(1);
+        loadAssessments().then(() => loadData(1));
     } else {
         window.location.href = "./index.html";
     }

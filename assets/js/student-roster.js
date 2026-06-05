@@ -9,23 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let allStudents = [];
     let filteredStudents = [];
-    let allAssessments = [];
+    // Removed loadAssessments
     
     // Pagination state
     let currentPage = 1;
     const itemsPerPage = 10;
-
-    async function loadAssessments() {
-        try {
-            const response = await fetch(`${API_BASE}/api/admin/assessments`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            const data = await response.json();
-            allAssessments = data.assessments || [];
-        } catch (e) {
-            console.error("Failed to load active assessments:", e);
-        }
-    }
 
     // Elements
     const studentTableBody = document.getElementById("studentTableBody");
@@ -491,32 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }).join("");
             }
 
-            // 4. Populate Assigned Assessments Checkboxes
-            const assignedAssessmentsList = document.getElementById("assignedAssessmentsList");
-            if (assignedAssessmentsList) {
-                if (allAssessments.length === 0) {
-                    assignedAssessmentsList.innerHTML = `
-                        <div class="text-center p-3 opacity-40">
-                            <p class="small mb-0">No active assessments found in system</p>
-                        </div>
-                    `;
-                } else {
-                    const studentAssignedIds = (student.assignedAssessments || []).map(id => id.toString());
-                    assignedAssessmentsList.innerHTML = allAssessments.map(a => {
-                        const isChecked = studentAssignedIds.includes(a._id.toString());
-                        return `
-                            <div class="form-check">
-                                <input class="form-check-input assessment-checkbox" type="checkbox" value="${a._id}" id="assess_${a._id}" ${isChecked ? 'checked' : ''}>
-                                <label class="form-check-label text-white small" for="assess_${a._id}">
-                                    ${escapeHtml(a.title)} <span class="opacity-50">(${escapeHtml(a.type)} | ${a.duration || 0}m)</span>
-                                </label>
-                            </div>
-                        `;
-                    }).join("");
-                }
-            }
-
-            // 2. Populate Allotted Assessors list
+            // Assigned Assessments moved to Allotment UI
             const renderDetailAssessor = (assessor, label) => {
                 if (assessor) {
                     return `
@@ -644,12 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const chestNo = document.getElementById("editStudentChestNo")?.value.trim() || "";
 
-        // Gather all checked assessments
-        const assignedAssessments = [];
-        document.querySelectorAll(".assessment-checkbox:checked").forEach(cb => {
-            assignedAssessments.push(cb.value);
-        });
-
         try {
             Swal.fire({
                 title: "Saving Credentials...",
@@ -665,7 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, email, phone, batch, clinicalStage, chestNo, assignedAssessments })
+                body: JSON.stringify({ name, email, phone, batch, clinicalStage, chestNo })
             });
 
             const result = await response.json();
@@ -767,7 +724,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initial load
     if (token) {
-        loadAssessments().then(() => loadStudents());
+        loadStudents();
     } else {
         window.location.href = "./index.html";
     }
