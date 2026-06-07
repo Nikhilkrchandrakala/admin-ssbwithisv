@@ -114,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Failed to fetch candidate profiles");
             }
 
+            const data = await response.json();
             allStudents = data.users || [];
             filteredStudents = [...allStudents];
             currentPage = 1;
