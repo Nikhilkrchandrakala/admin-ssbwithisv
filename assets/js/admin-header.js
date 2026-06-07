@@ -92,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
         'Franchise.html': 'franchise',
         'TotalSales.html': 'sales',
         'CouponManagement.html': 'coupons',
+        'all-users.html': 'admin',
         'leads.html': 'leads',
         'RolesManagement.html': 'roles',
         'Allotment.html': 'allotment',
@@ -258,6 +259,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (hasPermission('coupons')) {
                 managementLinks.push(`<a href="./CouponManagement.html" class="admin-dashboard-link ${currentPath === 'CouponManagement.html' ? 'active' : ''}">Coupons</a>`);
+            }
+            if (hasPermission('admin')) {
+                managementLinks.push(`<a href="./all-users.html" class="admin-dashboard-link ${currentPath === 'all-users.html' ? 'active' : ''}">All Users</a>`);
             }
             if (hasPermission('leads')) {
                 managementLinks.push(`<a href="./leads.html" class="admin-dashboard-link ${currentPath === 'leads.html' ? 'active' : ''}">Leads</a>`);
