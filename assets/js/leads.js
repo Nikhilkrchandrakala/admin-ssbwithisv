@@ -105,43 +105,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const globalIdx = startIdx + index + 1;
             const dateObj = new Date(lead.date);
             const formattedDate = dateObj.toLocaleDateString("en-GB", { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const initials = (lead.name || "U").split(" ").map(n => n[0]).join("").toUpperCase().substring(0,2);
             
+            let formattedTime = lead.time || "—";
+            if (formattedTime === "N/A" && lead.date) {
+                formattedTime = new Date(lead.date).toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit', hour12: true });
+            }
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${globalIdx}</td>
+                <td><span class="date-badge"><i class="far fa-calendar-alt me-1"></i> ${formattedDate}</span></td>
+                <td><span class="date-badge"><i class="far fa-clock me-1"></i> ${formattedTime}</span></td>
                 <td>
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="avatar-circle">${initials}</div>
-                        <div>
-                            <span class="lead-name" style="font-size: 0.95rem;">${escapeHtml(lead.name || "—")}</span>
-                            ${lead.isRegisteredLead ? '<br><span class="badge bg-warning text-dark mt-1" style="font-size: 0.65rem;">Registered User</span>' : ''}
-                        </div>
-                    </div>
+                    <span class="lead-name" style="font-size: 0.95rem;">${escapeHtml(lead.name || "—")}</span>
                 </td>
                 <td><span class="lead-contact"><i class="far fa-envelope me-1"></i> ${escapeHtml(lead.email || "—")}</span></td>
                 <td><span class="lead-contact"><i class="fas fa-phone-alt me-1"></i> ${escapeHtml(lead.phoneNumber || "—")}</span></td>
-                <td>
-                    <div class="actions-cell">
-                        ${lead.isRegisteredLead ? '' : `
-                        <button class="action-btn elevate-btn" title="Elevate to Candidate" data-id="${lead._id}" data-name="${escapeHtml(lead.name || '')}" data-email="${escapeHtml(lead.email || '')}">
-                            <i class="fas fa-level-up-alt"></i>
-                        </button>`}
-                        <button class="action-btn delete-btn" title="Delete Lead" data-id="${lead._id}" data-name="${escapeHtml(lead.name || '')}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </td>
             `;
             leadsTableBody.appendChild(row);
-        });
-
-        // Bind action buttons
-        leadsTableBody.querySelectorAll('.elevate-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleElevate(btn.dataset.id, btn.dataset.name, btn.dataset.email));
-        });
-        leadsTableBody.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleDelete(btn.dataset.id, btn.dataset.name));
         });
 
         // Render pagination info

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candidate Database - SSB Admin</title>
+    <title>Candidates - SSB Admin</title>
     <link rel="icon" type="image/png" href="./assets/logo/ISV2.png">
 
     <!-- Bootstrap 5 CSS -->
@@ -185,8 +185,8 @@
     <div class="container" style="max-width: 1400px; margin: 40px auto; padding: 0 20px;">
         <div class="admin-page-header">
             <div class="header-left">
-                <h1 class="admin-page-title"><i class="fas fa-database me-2"></i> Candidate Database</h1>
-                <p class="text-muted mb-0">Unified roster of all registered trainees, tracking progress logs and transactions</p>
+                 <h1 class="admin-page-title"><i class="fas fa-user-graduate me-2"></i> Candidates Management</h1>
+                 <p class="text-muted mb-0">View and manage trainees assigned to batches, their transactions, and documents</p>
             </div>
             <div class="d-flex gap-2">
                 <button class="thm-btn" id="addStudentBtn" onclick="openAddStudentModal()">
@@ -266,7 +266,7 @@
     <div class="admin-modal-overlay" id="studentModalOverlay">
         <div class="admin-modal" style="max-width: 1200px; width: 95%; margin: 20px auto;">
             <div class="admin-modal-header">
-                <h3 class="admin-modal-title"><i class="fas fa-id-card me-2"></i> Complete Trainee Profile</h3>
+                <h3 class="admin-modal-title"><i class="fas fa-id-card me-2"></i> Complete Candidate Details</h3>
                 <button type="button" class="btn-close btn-close-white" onclick="closeStudentModal()"></button>
             </div>
             
@@ -360,6 +360,22 @@
 
                             <div style="flex-grow: 1; max-height: 200px; overflow-y: auto; padding-right: 5px;">
                                 <div id="assignedAssessmentsList" style="display: none;"></div>
+                            </div>
+
+                            <!-- Purchase & Payment Details -->
+                            <div class="mt-3">
+                                <h5 class="text-warning mb-2" style="font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Purchase & Payment Details</h5>
+                                <div id="purchaseDetailsContainer" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 12px; font-size: 0.85rem; line-height: 1.5; color: #ccc;">
+                                    Loading purchase details...
+                                </div>
+                            </div>
+
+                            <!-- Uploaded Documents & Images -->
+                            <div class="mt-3 mb-3">
+                                <h5 class="text-warning mb-2" style="font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Uploaded Documents & Images</h5>
+                                <div id="uploadedDocumentsContainer" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 12px; font-size: 0.85rem; color: #ccc;">
+                                    No documents uploaded yet.
+                                </div>
                             </div>
                         </div>
 

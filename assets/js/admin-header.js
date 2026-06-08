@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Enforce Franchisee restrictions - they should only see the Franchisee page and Profile page
     if (token && role === 'franchise') {
         const pathLower = currentPath.toLowerCase();
-        if (pathLower !== 'franchisedashboard.html' && pathLower !== 'profile.html' && pathLower !== 'index.html' && currentPath !== '') {
+        if (pathLower !== 'franchisedashboard.html' && pathLower !== 'franchisedashboard' && pathLower !== 'profile.html' && pathLower !== 'profile' && pathLower !== 'index.html' && currentPath !== '') {
             window.location.href = './FranchiseDashboard.html';
             return;
         }
@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Enforce Assessor restrictions - they should only see the Profile page
     if (token && role === 'assessor') {
         const pathLower = currentPath.toLowerCase();
-        if (pathLower !== 'profile.html' && pathLower !== 'index.html' && currentPath !== '') {
+        if (pathLower !== 'profile.html' && pathLower !== 'profile' && pathLower !== 'index.html' && currentPath !== '') {
             window.location.href = './Profile.html';
             return;
         }
@@ -260,9 +260,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (hasPermission('coupons')) {
                 managementLinks.push(`<a href="./CouponManagement.html" class="admin-dashboard-link ${currentPath === 'CouponManagement.html' ? 'active' : ''}">Coupons</a>`);
             }
-            if (hasPermission('admin')) {
-                managementLinks.push(`<a href="./all-users.html" class="admin-dashboard-link ${currentPath === 'all-users.html' ? 'active' : ''}">All Users</a>`);
-            }
             if (hasPermission('leads')) {
                 managementLinks.push(`<a href="./leads.html" class="admin-dashboard-link ${currentPath === 'leads.html' ? 'active' : ''}">Leads</a>`);
             }
@@ -270,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 managementLinks.push(`<a href="./RolesManagement.html" class="admin-dashboard-link ${currentPath === 'RolesManagement.html' ? 'active' : ''}">Roles & Permissions</a>`);
             }
             if (hasPermission('students')) {
-                managementLinks.push(`<a href="./StudentRoster.html" class="admin-dashboard-link ${currentPath === 'StudentRoster.html' ? 'active' : ''}">Candidate Database</a>`);
+                managementLinks.push(`<a href="./StudentRoster.html" class="admin-dashboard-link ${currentPath === 'StudentRoster.html' ? 'active' : ''}">Candidates</a>`);
             }
             if (hasPermission('allotment')) {
                 managementLinks.push(`<a href="./Allotment.html" class="admin-dashboard-link ${currentPath === 'Allotment.html' ? 'active' : ''}">Assessor Allotment</a>`);

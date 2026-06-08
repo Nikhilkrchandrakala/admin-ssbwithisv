@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
-            allStudents = data.students || [];
+            allStudents = (data.students || []).filter(s => s.batch && s.batch.trim() !== "");
             filteredStudents = [...allStudents];
             currentPage = 1;
             populateBatchFilter();
@@ -402,7 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) throw new Error("Failed to load details from server");
 
             const result = await response.json();
-            const { student, orders } = result;
+            const { student, orders, submissions } = result;
 
             Swal.close();
 
@@ -527,6 +527,94 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     `;
                 }).join("");
+            }
+
+            // Populate Purchase & Payment Details
+            const purchaseDetailsContainer = document.getElementById("purchaseDetailsContainer");
+            if (purchaseDetailsContainer) {
+                if (!orders || orders.length === 0) {
+                    if (student.isManuallyCreated) {
+                        purchaseDetailsContainer.innerHTML = `
+                            <div class="mb-1"><strong>Method:</strong> <span class="badge bg-secondary text-light">MANUAL</span></div>
+                            <div class="mb-1"><strong>Details:</strong> Trainee created manually by Admin</div>
+                        `;
+                    } else {
+                        purchaseDetailsContainer.innerHTML = `
+                            <div class="mb-1"><strong>Method:</strong> Unknown</div>
+                            <div class="text-muted small">No payment orders found for this candidate.</div>
+                        `;
+                    }
+                } else {
+                    const latestOrder = orders[0];
+                    let method = "Razorpay";
+                    let methodBadgeColor = "bg-primary text-light";
+                    let paymentDetailsText = "";
+
+                    if (latestOrder.referralCode && latestOrder.referralCode.trim() !== '') {
+                        method = "Franchise";
+                        methodBadgeColor = "bg-warning text-dark";
+                        paymentDetailsText = `Referral Code: <code>${escapeHtml(latestOrder.referralCode)}</code>`;
+                    } else if (!latestOrder.orderId && !latestOrder.paymentId) {
+                        method = "Manual";
+                        methodBadgeColor = "bg-secondary text-light";
+                        paymentDetailsText = `Booked manually by Admin`;
+                    } else {
+                        paymentDetailsText = `Razorpay ID: <code>${escapeHtml(latestOrder.paymentId || latestOrder.orderId || 'N/A')}</code>`;
+                    }
+
+                    purchaseDetailsContainer.innerHTML = `
+                        <div class="mb-2"><strong>Purchase Method:</strong> <span class="badge ${methodBadgeColor}">${method}</span></div>
+                        <div class="mb-2"><strong>Payment Reference:</strong> ${paymentDetailsText}</div>
+                        <div class="mb-2"><strong>Amount Paid:</strong> <strong class="text-success">₹${(latestOrder.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></div>
+                        <div class="mb-0"><strong>Transaction Date:</strong> ${new Date(latestOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                    `;
+                }
+            }
+
+            // Populate Uploaded Documents & Images
+            const uploadedDocumentsContainer = document.getElementById("uploadedDocumentsContainer");
+            if (uploadedDocumentsContainer) {
+                let docLinks = [];
+
+                if (student.profileImage) {
+                    docLinks.push(`
+                        <div class="d-flex align-items-center justify-content-between mb-2 p-2" style="background: rgba(255,255,255,0.02); border-radius: 6px;">
+                            <span><i class="fas fa-user-circle me-2 text-warning"></i> Profile Picture</span>
+                            <a href="${student.profileImage}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
+                        </div>
+                    `);
+                }
+
+                if (submissions && submissions.length > 0) {
+                    submissions.forEach((sub, subIdx) => {
+                        if (sub.piqFiles && sub.piqFiles.length > 0) {
+                            sub.piqFiles.forEach((file, idx) => {
+                                docLinks.push(`
+                                    <div class="d-flex align-items-center justify-content-between mb-2 p-2" style="background: rgba(255,255,255,0.02); border-radius: 6px;">
+                                        <span><i class="fas fa-file-pdf me-2 text-danger"></i> PIQ Document #${idx + 1} (Sub #${subIdx + 1})</span>
+                                        <a href="${file}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
+                                    </div>
+                                `);
+                            });
+                        }
+                        if (sub.uploadedFiles && sub.uploadedFiles.length > 0) {
+                            sub.uploadedFiles.forEach((file, idx) => {
+                                docLinks.push(`
+                                    <div class="d-flex align-items-center justify-content-between mb-2 p-2" style="background: rgba(255,255,255,0.02); border-radius: 6px;">
+                                        <span><i class="fas fa-file-alt me-2 text-info"></i> Answer Sheet #${idx + 1} (Sub #${subIdx + 1})</span>
+                                        <a href="${file}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
+                                    </div>
+                                `);
+                            });
+                        }
+                    });
+                }
+
+                if (docLinks.length > 0) {
+                    uploadedDocumentsContainer.innerHTML = docLinks.join('');
+                } else {
+                    uploadedDocumentsContainer.innerHTML = `<div class="text-muted text-center py-2"><i class="fas fa-info-circle me-1"></i> No documents uploaded yet.</div>`;
+                }
             }
 
             studentModalOverlay.style.display = "flex";
