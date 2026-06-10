@@ -34,10 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('name');
     } else if (existingToken && existingRole) {
         if (existingRole === "admin" || existingRole === "assessor") {
-            window.location.href = "./Profile.html";
+            window.location.href = window.location.pathname.includes('admin-login') ? "./admin/Profile.html" : "./Profile.html";
             return;
         } else if (existingRole === "franchise") {
-            window.location.href = "./FranchiseDashboard.html";
+            window.location.href = window.location.pathname.includes('admin-login') ? "./admin/FranchiseDashboard.html" : "./FranchiseDashboard.html";
             return;
         }
     }
@@ -102,9 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Role-based routing
                 if (result.role === "admin" || result.role === "assessor") {
-                    window.location.href = "./Profile.html";
+                    window.location.href = window.location.pathname.includes('admin-login') ? "./admin/Profile.html" : "./Profile.html";
                 } else if (result.role === "franchise") {
-                    window.location.href = "./FranchiseDashboard.html";
+                    window.location.href = window.location.pathname.includes('admin-login') ? "./admin/FranchiseDashboard.html" : "./FranchiseDashboard.html";
                 } else {
                     window.location.href = "/";
                 }

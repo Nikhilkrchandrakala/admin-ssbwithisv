@@ -569,18 +569,24 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="mb-0"><strong>Transaction Date:</strong> ${new Date(latestOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                     `;
                 }
-            }
-
-            // Populate Uploaded Documents & Images
+                     // Populate Uploaded Documents & Images
             const uploadedDocumentsContainer = document.getElementById("uploadedDocumentsContainer");
             if (uploadedDocumentsContainer) {
                 let docLinks = [];
+                const cleanUrl = (url) => {
+                    if (!url) return "";
+                    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                    if (isLocal && url.startsWith('https://api.ssbwithisv.in')) {
+                        return url.replace('https://api.ssbwithisv.in', 'http://localhost:5001');
+                    }
+                    return url;
+                };
 
                 if (student.profileImage) {
                     docLinks.push(`
                         <div class="d-flex align-items-center justify-content-between mb-2 p-2" style="background: rgba(255,255,255,0.02); border-radius: 6px;">
                             <span><i class="fas fa-user-circle me-2 text-warning"></i> Profile Picture</span>
-                            <a href="${student.profileImage}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
+                            <a href="${cleanUrl(student.profileImage)}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
                         </div>
                     `);
                 }
@@ -592,7 +598,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 docLinks.push(`
                                     <div class="d-flex align-items-center justify-content-between mb-2 p-2" style="background: rgba(255,255,255,0.02); border-radius: 6px;">
                                         <span><i class="fas fa-file-pdf me-2 text-danger"></i> PIQ Document #${idx + 1} (Sub #${subIdx + 1})</span>
-                                        <a href="${file}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
+                                        <a href="${cleanUrl(file)}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
                                     </div>
                                 `);
                             });
@@ -602,7 +608,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 docLinks.push(`
                                     <div class="d-flex align-items-center justify-content-between mb-2 p-2" style="background: rgba(255,255,255,0.02); border-radius: 6px;">
                                         <span><i class="fas fa-file-alt me-2 text-info"></i> Answer Sheet #${idx + 1} (Sub #${subIdx + 1})</span>
-                                        <a href="${file}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
+                                        <a href="${cleanUrl(file)}" target="_blank" class="badge bg-dark border border-secondary text-light text-decoration-none"><i class="fas fa-external-link-alt"></i> View</a>
                                     </div>
                                 `);
                             });
