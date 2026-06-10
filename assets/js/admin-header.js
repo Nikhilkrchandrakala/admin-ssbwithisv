@@ -272,6 +272,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (hasPermission('allotment')) {
                 managementLinks.push(`<a href="./Allotment.html" class="admin-dashboard-link ${currentPath === 'Allotment.html' ? 'active' : ''}">Assessor Allotment</a>`);
             }
+            if (hasPermission('admin')) {
+                managementLinks.push(`<a href="./all-users.html" class="admin-dashboard-link ${currentPath === 'all-users.html' ? 'active' : ''}">Users</a>`);
+            }
 
 
             let contentDropdownHtml = '';

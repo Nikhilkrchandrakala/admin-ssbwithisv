@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
-            allStudents = (data.students || []).filter(s => s.batch && s.batch.trim() !== "");
+            allStudents = data.students || [];
             filteredStudents = [...allStudents];
             currentPage = 1;
             populateBatchFilter();
@@ -569,7 +569,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="mb-0"><strong>Transaction Date:</strong> ${new Date(latestOrder.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                     `;
                 }
-                     // Populate Uploaded Documents & Images
+            }
+            // Populate Uploaded Documents & Images
             const uploadedDocumentsContainer = document.getElementById("uploadedDocumentsContainer");
             if (uploadedDocumentsContainer) {
                 let docLinks = [];
@@ -816,10 +817,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function escapeHtml(str) {
     if (!str) return "";
-    return String(str).replace(/[&<>]/g, function (m) {
+    return String(str).replace(/[&<>"']/g, function (m) {
         if (m === '&') return '&amp;';
         if (m === '<') return '&lt;';
         if (m === '>') return '&gt;';
+        if (m === '"') return '&quot;';
+        if (m === "'") return '&#039;';
         return m;
     });
 }
