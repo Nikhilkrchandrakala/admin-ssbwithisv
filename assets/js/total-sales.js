@@ -1,6 +1,7 @@
 /**
  * Total Sales Analytics JS
  * Standardized for the Charcoal/Gold Admin System
+ * v2 — Booking Method tagging (manual / standard / franchise)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endDateFilter = document.getElementById('endDateFilter');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     const refreshBtn = document.getElementById('refreshBtn');
-    
+
     // Stats Elements
     const totalOrdersEl = document.getElementById('totalOrders');
     const totalRevenueEl = document.getElementById('totalRevenue');
@@ -30,6 +31,65 @@ document.addEventListener('DOMContentLoaded', () => {
         return localStorage.getItem('token');
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    //  Resolve booking method
+    //
+    //  Source-of-truth rules (works for ALL orders incl. legacy):
+    //    • No paymentId                        → manual   (admin booked, no Razorpay txn)
+    //    • Has paymentId + has referralCode    → franchise (came via partner link, then paid)
+    //    • Has paymentId + no referralCode     → standard  (direct gateway payment)
+    //
+    //  If the stored bookingMethod field is explicitly set it is used as-is
+    //  for any future orders written by the new backend code.
+    // ─────────────────────────────────────────────────────────────────
+    function resolveBookingMethod(o) {
+        // Prefer the explicit DB field when present (new orders)
+        if (o.bookingMethod) return o.bookingMethod;
+
+        // Infer from paymentId + referralCode (legacy orders & fallback)
+        const hasPayment  = o.paymentId && o.paymentId.trim() !== '';
+        const hasReferral = o.referralCode && o.referralCode.trim() !== '';
+
+        if (!hasPayment)               return 'manual';    // No Razorpay → admin manual booking
+        if (hasPayment && hasReferral) return 'franchise'; // Paid via gateway with a partner code
+        return 'standard';                                  // Paid via gateway, no partner
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Booking Method Badge HTML
+    // ─────────────────────────────────────────────────────────────────
+    function bookingMethodBadge(o) {
+        const method = resolveBookingMethod(o);
+        const badges = {
+            manual: {
+                icon: 'fa-tools',
+                label: 'Manual',
+                style: 'background:rgba(230,126,34,0.15); color:#e67e22; border:1px solid rgba(230,126,34,0.3);'
+            },
+            standard: {
+                icon: 'fa-credit-card',
+                label: 'Standard',
+                style: 'background:rgba(52,152,219,0.15); color:#3498db; border:1px solid rgba(52,152,219,0.3);'
+            },
+            franchise: {
+                icon: 'fa-store',
+                label: o.referralCode ? `Franchise · ${escapeHtml(o.referralCode)}` : 'Franchise',
+                style: 'background:rgba(224,194,20,0.12); color:#e0c214; border:1px solid rgba(224,194,20,0.3);'
+            }
+        };
+        const b = badges[method] || badges.standard;
+        return `<div class="franchise-info">
+                    <span style="padding:3px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;
+                                 text-transform:uppercase; display:inline-flex; align-items:center; gap:5px;
+                                 ${b.style}">
+                        <i class="fas ${b.icon}" style="font-size:0.7rem;"></i>${b.label}
+                    </span>
+                </div>`;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Load data
+    // ─────────────────────────────────────────────────────────────────
     async function loadData() {
         const token = getToken();
         if (!token) return;
@@ -48,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             allOrders = data.orders || data;
 
-            await populatePartners();
+            await populateBookingTypeFilter();
             updateStats();
             renderTable();
 
@@ -60,32 +120,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function populatePartners() {
+    // ─────────────────────────────────────────────────────────────────
+    //  Populate filter dropdown
+    //  Structure: All | Manual | Standard | Franchise | — partners —
+    // ─────────────────────────────────────────────────────────────────
+    async function populateBookingTypeFilter() {
+        const current = franchiseFilter.value;
+
+        franchiseFilter.innerHTML = `
+            <option value="all">All Booking Types</option>
+            <optgroup label="─── By Method ───">
+                <option value="manual">🛠 Manual (Admin Booked)</option>
+                <option value="standard">💳 Standard (Payment Gateway)</option>
+                <option value="franchise">🏪 Franchise (Referral)</option>
+            </optgroup>
+        `;
+
+        // Append individual franchise partner options
         try {
             const token = getToken();
             const res = await fetch(`${API_BASE}/api/allFranchise`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!res.ok) return;
-            const partners = await res.json();
-
-            const current = franchiseFilter.value;
-            franchiseFilter.innerHTML = `<option value="all">Global (All Channels)</option><option value="direct">Direct Bookings Only</option>`;
-            
-            partners.forEach(p => {
-                if (!p.referralCode) return;
-                const opt = document.createElement('option');
-                opt.value = p.referralCode;
-                opt.textContent = `${p.name} (${p.referralCode})`;
-                if (p.referralCode === current) opt.selected = true;
-                franchiseFilter.appendChild(opt);
-            });
+            if (res.ok) {
+                const partners = await res.json();
+                const hasPartners = partners && partners.length > 0;
+                if (hasPartners) {
+                    const group = document.createElement('optgroup');
+                    group.label = '─── By Partner Code ───';
+                    partners.forEach(p => {
+                        if (!p.referralCode) return;
+                        const opt = document.createElement('option');
+                        opt.value = p.referralCode;
+                        opt.textContent = `${p.name} (${p.referralCode})`;
+                        if (p.referralCode === current) opt.selected = true;
+                        group.appendChild(opt);
+                    });
+                    franchiseFilter.appendChild(group);
+                }
+            }
         } catch (e) { console.error("Partner fetch error:", e); }
+
+        // Restore selection if it was a simple method value
+        if (['all', 'manual', 'standard', 'franchise'].includes(current)) {
+            franchiseFilter.value = current;
+        }
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    //  KPI Stats
+    // ─────────────────────────────────────────────────────────────────
     function updateStats() {
         const total = allOrders.length;
         const revenue = allOrders.reduce((s, o) => s + (parseFloat(o.price) || 0), 0);
-        const franchiseCount = allOrders.filter(o => o.referralCode && o.referralCode.trim() !== '').length;
-        const directCount = total - franchiseCount;
+
+        const franchiseCount = allOrders.filter(o => resolveBookingMethod(o) === 'franchise').length;
+        const directCount = allOrders.filter(o => resolveBookingMethod(o) !== 'franchise').length;
 
         totalOrdersEl.innerText = total;
         totalRevenueEl.innerText = `₹${revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
@@ -93,10 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
         directOrdersEl.innerText = directCount;
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    //  Render table with filters applied
+    // ─────────────────────────────────────────────────────────────────
     function renderTable() {
         let filtered = [...allOrders];
 
-        // Apply Search
+        // Search
         const search = searchInput.value.toLowerCase();
         if (search) {
             filtered = filtered.filter(o => {
@@ -108,29 +199,34 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Apply Partner Filter
+        // Booking Type / Partner filter
         const pVal = franchiseFilter.value;
-        if (pVal === 'direct') {
-            filtered = filtered.filter(o => !o.referralCode || o.referralCode.trim() === '');
+        if (pVal === 'manual') {
+            filtered = filtered.filter(o => resolveBookingMethod(o) === 'manual');
+        } else if (pVal === 'standard') {
+            filtered = filtered.filter(o => resolveBookingMethod(o) === 'standard');
+        } else if (pVal === 'franchise') {
+            filtered = filtered.filter(o => resolveBookingMethod(o) === 'franchise');
         } else if (pVal !== 'all') {
+            // Specific franchise partner referral code
             filtered = filtered.filter(o => o.referralCode === pVal);
         }
 
-        // Apply Batch Filter
+        // Batch filter
         const bVal = batchNoFilter.value.toLowerCase().trim();
         if (bVal) {
             filtered = filtered.filter(o => (o.slotId?.batchNo || '').toLowerCase().includes(bVal));
         }
 
-        // Apply Date Range
+        // Date range
         if (startDateFilter.value) {
             const start = new Date(startDateFilter.value);
-            start.setHours(0,0,0,0);
+            start.setHours(0, 0, 0, 0);
             filtered = filtered.filter(o => new Date(o.createdAt) >= start);
         }
         if (endDateFilter.value) {
             const end = new Date(endDateFilter.value);
-            end.setHours(23,59,59,999);
+            end.setHours(23, 59, 59, 999);
             filtered = filtered.filter(o => new Date(o.createdAt) <= end);
         }
 
@@ -146,15 +242,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filtered.forEach(o => {
             const tr = document.createElement('tr');
-            
+
             const prodTitle = o.slotId?.title || o.courseTitle || o.courseId?.title || 'Unknown Product';
             const isBatch = !!o.slotId;
             const badgeClass = isBatch ? 'badge-batch' : 'badge-course';
             const badgeIcon = isBatch ? 'fa-calendar-alt' : 'fa-book';
-            
-            const isFranchise = o.referralCode && o.referralCode.trim() !== '';
+
             const statusClass = (o.status || '').toLowerCase() === 'paid' ? 'status-paid' : 'status-pending';
-            
             const date = new Date(o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
             tr.innerHTML = `
@@ -170,12 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size:0.85rem; font-weight:500;">${escapeHtml(prodTitle)}</div>
                 </td>
                 <td class="text-success" style="font-weight:700;">₹${(parseFloat(o.price) || 0).toFixed(2)}</td>
-                <td>
-                    <div class="franchise-info">
-                        <i class="fas ${isFranchise ? 'fa-store' : 'fa-user-direct'}"></i>
-                        <span>${isFranchise ? escapeHtml(o.referralCode) : 'Direct Booking'}</span>
-                    </div>
-                </td>
+                <td>${bookingMethodBadge(o)}</td>
                 <td><code style="color:var(--text-white); opacity:0.8;">${o.slotId?.batchNo || '—'}</code></td>
                 <td><span class="status-badge ${statusClass}">${(o.status || 'pending').toUpperCase()}</span></td>
                 <td><span style="font-size:0.85rem; opacity:0.6;">${date}</span></td>
@@ -189,11 +278,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    //  Order Detail Modal
+    // ─────────────────────────────────────────────────────────────────
     window.showOrderDetail = (o) => {
         const body = document.getElementById('orderDetailBody');
         const finalPrice = parseFloat(o.price) || 0;
         const origPrice = parseFloat(o.originalAmount) || finalPrice;
         const discount = parseFloat(o.discount) || 0;
+        const method = resolveBookingMethod(o);
+
+        const methodLabels = {
+            manual: '🛠 Manual (Admin Booked)',
+            standard: '💳 Standard (Payment Gateway)',
+            franchise: `🏪 Franchise — Partner: ${o.referralCode || 'N/A'}`
+        };
+        const methodDisplay = methodLabels[method] || methodLabels.standard;
 
         body.innerHTML = `
             <div class="order-detail-row"><span>Transaction ID</span><span class="fw-bold">${o.orderId || o._id}</span></div>
@@ -214,13 +314,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>FINAL PAYOUT</span><span class="fw-bold text-warning" style="font-size: 1.2rem;">₹${finalPrice.toFixed(2)}</span>
             </div>
             <div class="order-detail-row"><span>Coupon Used</span><span class="badge bg-warning text-dark">${o.couponCode || 'NONE'}</span></div>
-            <div class="order-detail-row"><span>Referral Partner</span><span class="fw-bold">${o.referralCode || 'Direct (No Partner)'}</span></div>
+            <div class="order-detail-row"><span>Booking Method</span><span class="fw-bold">${methodDisplay}</span></div>
             <div class="order-detail-row"><span>Status</span><span class="status-badge ${o.status === 'paid' ? 'status-paid' : 'status-pending'}">${(o.status || 'pending').toUpperCase()}</span></div>
-            <div class="order-detail-row"><span>Date & Time</span><span class="opacity-70">${new Date(o.createdAt).toLocaleString()}</span></div>
+            <div class="order-detail-row"><span>Date &amp; Time</span><span class="opacity-70">${new Date(o.createdAt).toLocaleString()}</span></div>
         `;
         new bootstrap.Modal(document.getElementById('orderDetailModal')).show();
     };
 
+    // ─────────────────────────────────────────────────────────────────
+    //  Save batch number inline edit
+    // ─────────────────────────────────────────────────────────────────
     window.saveOrderBatch = async (orderId, slotId) => {
         const newBatch = document.getElementById('editOrderBatchInput').value.trim();
         if (!newBatch) {
@@ -262,21 +365,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 showConfirmButton: false
             });
 
-            // Update in-memory record to avoid forced sync reload
+            // Update in-memory record
             const orderIdx = allOrders.findIndex(o => o._id === orderId);
             if (orderIdx !== -1) {
-                if (!allOrders[orderIdx].slotId) {
-                    allOrders[orderIdx].slotId = {};
-                }
+                if (!allOrders[orderIdx].slotId) allOrders[orderIdx].slotId = {};
                 allOrders[orderIdx].slotId.batchNo = newBatch;
             }
 
-            // Hide modal
             const modalEl = document.getElementById('orderDetailModal');
             const modalInstance = bootstrap.Modal.getInstance(modalEl);
             if (modalInstance) modalInstance.hide();
 
-            // Refresh table view
             renderTable();
 
         } catch (error) {
@@ -292,6 +391,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ─────────────────────────────────────────────────────────────────
+    //  Utilities
+    // ─────────────────────────────────────────────────────────────────
     function escapeHtml(str) {
         if (!str) return '';
         return String(str).replace(/[&<>]/g, function (m) {
@@ -307,7 +409,9 @@ document.addEventListener('DOMContentLoaded', () => {
         clearFiltersBtn.style.display = hasFilter ? 'inline-block' : 'none';
     }
 
-    // Event Listeners
+    // ─────────────────────────────────────────────────────────────────
+    //  Event Listeners
+    // ─────────────────────────────────────────────────────────────────
     [searchInput, franchiseFilter, batchNoFilter, startDateFilter, endDateFilter].forEach(el => {
         el.addEventListener('input', () => { renderTable(); toggleClear(); });
     });
