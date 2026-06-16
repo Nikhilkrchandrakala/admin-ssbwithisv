@@ -8,7 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const magazineGrid = document.getElementById('magazineGrid');
     const loadingState = document.getElementById('loadingState');
     const emptyState = document.getElementById('emptyState');
-    const magModal = new bootstrap.Modal(document.getElementById('magModal'));
+    const magModal = new bootstrap.Modal(document.getElementById('magModal'), {
+        focus: false
+    });
     
     const magForm = document.getElementById('magForm');
     const magId = document.getElementById('magId');
@@ -27,6 +29,106 @@ document.addEventListener('DOMContentLoaded', () => {
         return localStorage.getItem('token');
     }
 
+    const defaultCategories = ["Magazine", "Books", "SSBPrep"];
+    let categories = [...defaultCategories];
+
+    function loadCategoriesList(fetchedMagazines = []) {
+        const stored = localStorage.getItem('library_categories');
+        if (stored) {
+            try {
+                categories = JSON.parse(stored);
+            } catch (e) {
+                categories = [...defaultCategories];
+            }
+        }
+        
+        // Merge from fetched magazines
+        if (fetchedMagazines && fetchedMagazines.length > 0) {
+            const fetchedTags = fetchedMagazines.map(m => m.tags).filter(Boolean);
+            categories = Array.from(new Set([...categories, ...fetchedTags]));
+        }
+        
+        // Ensure defaults are always present
+        defaultCategories.forEach(d => {
+            if (!categories.includes(d)) categories.push(d);
+        });
+
+        localStorage.setItem('library_categories', JSON.stringify(categories));
+        renderCategoryOptions();
+    }
+
+    function renderCategoryOptions(selectedValue = '') {
+        const currentSelected = selectedValue || magCategory.value || 'Magazine';
+        magCategory.innerHTML = '';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            if (cat === currentSelected) {
+                opt.selected = true;
+            }
+            magCategory.appendChild(opt);
+        });
+    }
+
+    // Attach Add/Remove category button handlers
+    document.getElementById('addCategoryBtn').addEventListener('click', async () => {
+        const { value: newCat } = await Swal.fire({
+            title: 'Add New Category',
+            input: 'text',
+            inputLabel: 'Category Name',
+            inputPlaceholder: 'e.g. Current Affairs, Interview Prep',
+            showCancelButton: true,
+            background: '#1a1a1a',
+            color: '#fff',
+            confirmButtonColor: '#d2a100',
+            cancelButtonColor: 'rgba(255,255,255,0.1)',
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'You need to write something!';
+                }
+                if (categories.includes(value.trim())) {
+                    return 'Category already exists!';
+                }
+            }
+        });
+
+        if (newCat) {
+            const trimmed = newCat.trim();
+            categories.push(trimmed);
+            localStorage.setItem('library_categories', JSON.stringify(categories));
+            renderCategoryOptions(trimmed);
+            Swal.fire({ icon: 'success', title: 'Added', text: `Category "${trimmed}" added successfully.`, background: '#1a1a1a', color: '#fff', timer: 1500, showConfirmButton: false });
+        }
+    });
+
+    document.getElementById('removeCategoryBtn').addEventListener('click', async () => {
+        const selected = magCategory.value;
+        if (defaultCategories.includes(selected)) {
+            Swal.fire({ icon: 'error', title: 'Cannot Delete', text: `Default category "${selected}" cannot be deleted.`, background: '#1a1a1a', color: '#fff' });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Remove Category?',
+            text: `Are you sure you want to remove the category "${selected}" from the list?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ff6b6b',
+            cancelButtonColor: 'rgba(255,255,255,0.1)',
+            confirmButtonText: 'Yes, remove it',
+            background: '#1a1a1a',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                categories = categories.filter(c => c !== selected);
+                localStorage.setItem('library_categories', JSON.stringify(categories));
+                renderCategoryOptions('Magazine');
+                Swal.fire({ icon: 'success', title: 'Removed', text: 'Category removed.', background: '#1a1a1a', color: '#fff', timer: 1500, showConfirmButton: false });
+            }
+        });
+    });
+
     async function loadMagazines() {
         const token = getToken();
         if (!token) return;
@@ -42,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Failed to fetch library data');
 
             const data = await response.json();
+            loadCategoriesList(data);
             renderGrid(data);
 
         } catch (error) {
@@ -102,6 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
         magCategory.value = category || 'Magazine';
         magPdf.required = false;
         magImage.required = false;
+        document.getElementById('magPdfLabel').innerHTML = 'Document File (PDF) <span class="text-muted" style="font-size: 0.8rem; font-weight: normal;">(Optional)</span>';
+        document.getElementById('magImageLabel').innerHTML = 'Cover Image (Portrait) <span class="text-muted" style="font-size: 0.8rem; font-weight: normal;">(Optional)</span>';
         pdfHint.style.display = 'block';
         imgHint.style.display = 'block';
         modalTitle.innerHTML = '<i class="fas fa-edit me-2 text-warning"></i> Edit Metadata';
@@ -113,6 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
         magId.value = '';
         magPdf.required = true;
         magImage.required = true;
+        document.getElementById('magPdfLabel').innerHTML = 'Document File (PDF) *';
+        document.getElementById('magImageLabel').innerHTML = 'Cover Image (Portrait) *';
         pdfHint.style.display = 'none';
         imgHint.style.display = 'none';
         modalTitle.innerHTML = '<i class="fas fa-upload me-2 text-warning"></i> Publish Asset';
@@ -210,5 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    loadCategoriesList();
     loadMagazines();
 });

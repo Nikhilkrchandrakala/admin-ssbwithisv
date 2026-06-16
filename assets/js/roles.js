@@ -7,6 +7,53 @@ document.addEventListener("DOMContentLoaded", () => {
     const API_BASE = config?.backendBaseUrl || 'http://localhost:5001';
     const token = localStorage.getItem("token");
 
+    function parseJwt(t) {
+        try {
+            return JSON.parse(atob(t.split('.')[1]));
+        } catch (e) {
+            return null;
+        }
+    }
+    const loggedInUserPayload = token ? parseJwt(token) : null;
+    const loggedInUserId = loggedInUserPayload ? loggedInUserPayload.id : null;
+
+    const ROLE_LEVELS = {
+        super_admin: 4,
+        admin: 3,
+        franchise: 2,
+        assessor: 2,
+        student: 1
+    };
+
+    const permissionsStr = localStorage.getItem("permissions");
+    const loggedInPermissions = permissionsStr ? JSON.parse(permissionsStr) : [];
+    const isSuperAdmin = loggedInPermissions.includes("super_admin");
+    const loggedInLevel = isSuperAdmin ? "super_admin" : (loggedInUserPayload ? loggedInUserPayload.role : "student");
+
+    function enforceLevelLimits() {
+        const adminOption = modalUserRole.querySelector('option[value="admin"]');
+        if (adminOption) {
+            if (ROLE_LEVELS[loggedInLevel] <= ROLE_LEVELS["admin"]) {
+                adminOption.setAttribute("disabled", "true");
+            } else {
+                adminOption.removeAttribute("disabled");
+            }
+        }
+
+        const superAdminCheck = document.getElementById("superAdminCheck");
+        if (superAdminCheck) {
+            if (ROLE_LEVELS[loggedInLevel] <= ROLE_LEVELS["super_admin"]) {
+                superAdminCheck.setAttribute("disabled", "true");
+                superAdminCheck.parentElement.style.opacity = "0.5";
+                superAdminCheck.parentElement.style.cursor = "not-allowed";
+            } else {
+                superAdminCheck.removeAttribute("disabled");
+                superAdminCheck.parentElement.style.opacity = "";
+                superAdminCheck.parentElement.style.cursor = "";
+            }
+        }
+    }
+
     let allUsers = [];
 
     // Elements
@@ -138,12 +185,37 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${sourceBadge}</td>
                     <td>${details}</td>
                     <td style="text-align: center; white-space: nowrap;">
-                        <button class="thm-btn" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}', '${u.assessorType || ''}')">
-                            <i class="fas fa-edit me-1"></i> Edit
-                        </button>
-                        <button class="thm-btn" style="background:#ff6b6b; border-color:#ff6b6b; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px;" onclick="confirmDeleteUser('${u.id}', '${escapedName}', '${u.email}')">
-                            <i class="fas fa-trash-alt me-1"></i> Delete
-                        </button>
+                        ${(() => {
+                            const isProtected = u.email.toLowerCase() === 'nkc@ssbwithisv.in';
+                            const isSelf = u.id === loggedInUserId;
+                            const isTargetSuper = u.email.toLowerCase() === "info@ssbwithisv.in" || u.email.toLowerCase() === "nkc@ssbwithisv.in" || (u.permissions && u.permissions.includes("super_admin"));
+                            const targetLevel = isTargetSuper ? "super_admin" : u.role;
+                            const canManage = ROLE_LEVELS[loggedInLevel] > ROLE_LEVELS[targetLevel];
+
+                            let editBtn = "";
+                            if (isProtected) {
+                                editBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; opacity: 0.6; cursor: not-allowed;" disabled title="This is a protected user and cannot be edited."><i class="fas fa-user-shield me-1"></i> Locked</button>`;
+                            } else if (isSelf) {
+                                editBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot edit your own account here."><i class="fas fa-user-lock me-1"></i> Self</button>`;
+                            } else if (!canManage) {
+                                editBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot edit other users on the same or higher level."><i class="fas fa-user-shield me-1"></i> Locked</button>`;
+                            } else {
+                                editBtn = `<button class="thm-btn" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}', '${u.assessorType || ''}')"><i class="fas fa-edit me-1"></i> Edit</button>`;
+                            }
+
+                            let deleteBtn = "";
+                            if (isProtected) {
+                                deleteBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px; opacity: 0.6; cursor: not-allowed;" disabled title="This is a protected user and cannot be deleted."><i class="fas fa-lock me-1"></i> Locked</button>`;
+                            } else if (isSelf) {
+                                deleteBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot delete your own account."><i class="fas fa-user-lock me-1"></i> Self</button>`;
+                            } else if (!canManage) {
+                                deleteBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot delete other users on the same or higher level."><i class="fas fa-lock me-1"></i> Locked</button>`;
+                            } else {
+                                deleteBtn = `<button class="thm-btn" style="background:#ff6b6b; border-color:#ff6b6b; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px;" onclick="confirmDeleteUser('${u.id}', '${escapedName}', '${u.email}')"><i class="fas fa-trash-alt me-1"></i> Delete</button>`;
+                            }
+
+                            return editBtn + deleteBtn;
+                        })()}
                     </td>
                 </tr>
             `;
@@ -170,6 +242,18 @@ document.addEventListener("DOMContentLoaded", () => {
         modalUserPassword.value = "";
 
         modalUserRole.value = role || "assessor";
+        const isSelf = id === loggedInUserId;
+        if (email.toLowerCase() === 'nkc@ssbwithisv.in' || isSelf) {
+            modalUserRole.setAttribute("disabled", "true");
+            modalUserRole.style.background = "#2b2b2b";
+            modalUserRole.style.borderColor = "#555";
+            modalUserRole.style.opacity = "0.8";
+        } else {
+            modalUserRole.removeAttribute("disabled");
+            modalUserRole.style.background = "";
+            modalUserRole.style.borderColor = "";
+            modalUserRole.style.opacity = "";
+        }
         modalCommission.value = commission || 20;
 
         // Reset and check permissions
@@ -189,6 +273,8 @@ document.addEventListener("DOMContentLoaded", () => {
         commissionGroup.style.display = (role === "franchise") ? "block" : "none";
         document.getElementById("permissionsGroup").style.display = (role === "admin") ? "block" : "none";
         document.getElementById("assessorGroup").style.display = (role === "assessor") ? "block" : "none";
+
+        enforceLevelLimits();
 
         roleModalOverlay.style.display = "flex";
     };
@@ -214,6 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
         modalUserPassword.value = "";
 
         modalUserRole.value = "assessor";
+        modalUserRole.removeAttribute("disabled");
+        modalUserRole.style.background = "";
+        modalUserRole.style.borderColor = "";
+        modalUserRole.style.opacity = "";
         modalCommission.value = 20;
         commissionGroup.style.display = "none";
         document.getElementById("permissionsGroup").style.display = "none";
@@ -226,6 +316,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Default GTO selection for assessor promote
         const gtoRadio = document.querySelector('input[name="assessorType"][value="GTO"]');
         if (gtoRadio) gtoRadio.checked = true;
+
+        enforceLevelLimits();
 
         roleModalOverlay.style.display = "flex";
     };
