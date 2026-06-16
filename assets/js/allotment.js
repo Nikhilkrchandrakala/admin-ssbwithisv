@@ -454,11 +454,40 @@ document.addEventListener("DOMContentLoaded", () => {
             if (av) av.style.border = "2px solid var(--primary-gold)";
         }, 50);
 
-        // Bind dropdown values
-        selectPsych.value = psychId || "";
-        selectGTO.value = gtoId || "";
-        selectTO.value = toId || "";
-        selectIO.value = ioId || "";
+        // Parse student courses / clinical stages for disabling/enabling fields
+        const gtoAllowed = stages.includes("full_course") || stages.includes("group_testing");
+        const ioAllowed = stages.includes("full_course") || stages.includes("interview");
+        const psychOrToAllowed = stages.includes("full_course") || stages.includes("psych");
+
+        // Bind dropdown values (or clear if not allowed by course)
+        selectPsych.value = psychOrToAllowed ? (psychId || "") : "";
+        selectGTO.value = gtoAllowed ? (gtoId || "") : "";
+        selectTO.value = psychOrToAllowed ? (toId || "") : "";
+        selectIO.value = ioAllowed ? (ioId || "") : "";
+
+        // Enable / Disable fields based on course rules
+        selectPsych.disabled = !psychOrToAllowed;
+        selectTO.disabled = !psychOrToAllowed;
+        selectGTO.disabled = !gtoAllowed;
+        selectIO.disabled = !ioAllowed;
+
+        // Update placeholder texts dynamically
+        if (selectPsych.options.length > 0) selectPsych.options[0].text = psychOrToAllowed ? "-- Select Psych Assessor --" : "-- Not Allowed by Course --";
+        if (selectTO.options.length > 0) selectTO.options[0].text = psychOrToAllowed ? "-- Select TO Assessor --" : "-- Not Allowed by Course --";
+        if (selectGTO.options.length > 0) selectGTO.options[0].text = gtoAllowed ? "-- Select GTO Assessor --" : "-- Not Allowed by Course --";
+        if (selectIO.options.length > 0) selectIO.options[0].text = ioAllowed ? "-- Select IO Assessor --" : "-- Not Allowed by Course --";
+
+        // Toggle Allocated Psych Assessments checklist section display
+        const psychAssessmentsSection = document.getElementById("psychAssessmentsSection");
+        if (psychAssessmentsSection) {
+            const isGTOOnly = stages.includes("group_testing") && !stages.includes("full_course") && !stages.includes("psych");
+            const isIOOnly = stages.includes("interview") && !stages.includes("full_course") && !stages.includes("psych");
+            if (isGTOOnly || isIOOnly) {
+                psychAssessmentsSection.style.display = "none";
+            } else {
+                psychAssessmentsSection.style.display = "block";
+            }
+        }
 
         // Populate Assigned Assessments Checkboxes
         const assignedAssessmentsList = document.getElementById("assignedAssessmentsList");
@@ -518,11 +547,59 @@ document.addEventListener("DOMContentLoaded", () => {
             assignedAssessments.push(cb.value);
         });
 
-        if (assignedAssessments.length === 0 && allAssessments.length > 0) {
+        // Pre-validate allotment rules against candidate course enrollment
+        const student = allStudents.find(s => s._id === id);
+        const studentStage = student ? student.clinicalStage : "full_course";
+        const stagesList = (studentStage || "full_course").split(",").map(st => st.trim()).filter(Boolean);
+        const isGtoAllowed = stagesList.includes("full_course") || stagesList.includes("group_testing");
+        const isIoAllowed = stagesList.includes("full_course") || stagesList.includes("interview");
+        const isPsychOrToAllowed = stagesList.includes("full_course") || stagesList.includes("psych");
+
+        const isGtoOnly = stagesList.includes("group_testing") && !stagesList.includes("full_course") && !stagesList.includes("psych");
+        const isIoOnly = stagesList.includes("interview") && !stagesList.includes("full_course") && !stagesList.includes("psych");
+
+        if (!isGtoOnly && !isIoOnly && assignedAssessments.length === 0 && allAssessments.length > 0) {
             Swal.fire({
                 icon: "error",
                 title: "Assessment Required",
                 text: "A student MUST be allotted at least one Assessment.",
+                background: "#1a1a1a",
+                color: "#fff",
+                confirmButtonColor: "#ff6b6b"
+            });
+            isSubmittingAllotment = false;
+            return;
+        }
+
+        if (assignedGTO && !isGtoAllowed) {
+            Swal.fire({
+                icon: "error",
+                title: "Invalid Allotment",
+                text: "A GTO Assessor cannot be allotted for this student's course.",
+                background: "#1a1a1a",
+                color: "#fff",
+                confirmButtonColor: "#ff6b6b"
+            });
+            isSubmittingAllotment = false;
+            return;
+        }
+        if (assignedIO && !isIoAllowed) {
+            Swal.fire({
+                icon: "error",
+                title: "Invalid Allotment",
+                text: "An IO Assessor cannot be allotted for this student's course.",
+                background: "#1a1a1a",
+                color: "#fff",
+                confirmButtonColor: "#ff6b6b"
+            });
+            isSubmittingAllotment = false;
+            return;
+        }
+        if ((assignedPsych || assignedTO) && !isPsychOrToAllowed) {
+            Swal.fire({
+                icon: "error",
+                title: "Invalid Allotment",
+                text: "A Psych or TO Assessor cannot be allotted for this student's course.",
                 background: "#1a1a1a",
                 color: "#fff",
                 confirmButtonColor: "#ff6b6b"
