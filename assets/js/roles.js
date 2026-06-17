@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loggedInUserEmail = loggedInUserPayload ? (loggedInUserPayload.email || "").toLowerCase() : "";
 
     const ROLE_LEVELS = {
+        owner: 5,
         super_admin: 4,
         admin: 3,
         franchise: 2,
@@ -29,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const permissionsStr = localStorage.getItem("permissions");
     const loggedInPermissions = permissionsStr ? JSON.parse(permissionsStr) : [];
     const isSuperAdmin = loggedInPermissions.includes("super_admin");
-    const loggedInLevel = isSuperAdmin ? "super_admin" : (loggedInUserPayload ? loggedInUserPayload.role : "student");
+    const loggedInLevel = (loggedInUserPayload && loggedInUserPayload.role === "owner") ? "owner" : (isSuperAdmin ? "super_admin" : (loggedInUserPayload ? loggedInUserPayload.role : "student"));
 
     function enforceLevelLimits() {
         const adminOption = modalUserRole.querySelector('option[value="admin"]');
@@ -80,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             usersTableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center p-5">
+                    <td colspan="6" class="text-center p-5">
                         <div class="spinner-border text-warning" role="status"></div>
                         <p class="mt-3 mb-0 opacity-70">Fetching staff accounts from database...</p>
                     </td>
@@ -112,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Fetch Users Error:", error);
             usersTableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center p-5 text-danger">
+                    <td colspan="6" class="text-center p-5 text-danger">
                         <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                         <p class="mb-0">Error loading staff users: ${error.message}</p>
                     </td>
@@ -126,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (usersList.length === 0) {
             usersTableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center p-5 opacity-50">
+                    <td colspan="6" class="text-center p-5 opacity-50">
                         <i class="fas fa-users-slash fa-2x mb-3"></i>
                         <p class="mb-0">No matching staff accounts found.</p>
                     </td>
@@ -139,7 +140,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Render beautiful role badge
             let roleBadgeClass = "role-student";
             let roleLabel = "Candidate";
-            if (u.role === "admin") {
+            if (u.role === "owner") {
+                roleBadgeClass = "role-owner";
+                roleLabel = "OWNER";
+            } else if (u.role === "admin") {
                 roleBadgeClass = "role-admin";
                 if (u.email.toLowerCase() === "info@ssbwithisv.in" || (u.permissions && u.permissions.includes("super_admin"))) {
                     roleLabel = "SUPER ADMIN";
@@ -171,9 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
 
-            // Database collection origin indicator
-            const sourceBadge = `<span class="source-badge">${u.sourceCollection}</span>`;
-
             const safeName = u.name || "System Admin";
             const escapedName = safeName.replace(/'/g, "\\'");
 
@@ -183,14 +184,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${u.email}</td>
                     <td>${u.phone || "N/A"}</td>
                     <td><span class="role-badge ${roleBadgeClass}">${roleLabel}</span></td>
-                    <td>${sourceBadge}</td>
                     <td>${details}</td>
                     <td style="text-align: center; white-space: nowrap;">
                         ${(() => {
-                            const isProtected = u.email.toLowerCase() === 'nkc@ssbwithisv.in';
-                            const isSelf = u.id === loggedInUserId;
-                            const isTargetSuper = u.email.toLowerCase() === "info@ssbwithisv.in" || u.email.toLowerCase() === "nkc@ssbwithisv.in" || (u.permissions && u.permissions.includes("super_admin"));
-                            const targetLevel = isTargetSuper ? "super_admin" : u.role;
+                             const isProtected = u.email.toLowerCase() === 'nkc@ssbwithisv.in' || u.role === 'owner';
+                             const isSelf = u.id === loggedInUserId;
+                             const isTargetOwner = u.role === "owner";
+                             const isTargetSuper = u.email.toLowerCase() === "info@ssbwithisv.in" || u.email.toLowerCase() === "nkc@ssbwithisv.in" || (u.permissions && u.permissions.includes("super_admin"));
+                             const targetLevel = isTargetOwner ? "owner" : (isTargetSuper ? "super_admin" : u.role);
 
                             // Super Admins can edit anyone (except self/protected)
                             const canEdit = !isSelf && !isProtected && (
@@ -256,7 +257,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         modalUserRole.value = role || "assessor";
         const isSelf = id === loggedInUserId;
-        if (email.toLowerCase() === 'nkc@ssbwithisv.in' || isSelf) {
+        const isProtectedUser = email.toLowerCase() === 'nkc@ssbwithisv.in' || role === 'owner';
+        if (isProtectedUser || isSelf) {
             modalUserRole.setAttribute("disabled", "true");
             modalUserRole.style.background = "#2b2b2b";
             modalUserRole.style.borderColor = "#555";

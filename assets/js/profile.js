@@ -121,7 +121,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Render Role Badge labels
             let roleLabel = "Staff User";
-            if (user.role === "admin") {
+            if (user.role === "owner") {
+                roleLabel = "OWNER";
+            } else if (user.role === "admin") {
                 if (user.permissions && user.permissions.includes("super_admin")) {
                     roleLabel = "SUPER ADMIN";
                 } else {

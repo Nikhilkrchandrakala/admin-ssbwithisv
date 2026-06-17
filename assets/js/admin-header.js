@@ -104,6 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasPermission = (permissionKey) => {
         if (!permissionKey) return true;
         try {
+            const currentRole = localStorage.getItem('role');
+            if (currentRole === 'owner') return true;
             const perms = JSON.parse(localStorage.getItem('permissions') || '[]');
             return perms.includes('super_admin') || perms.includes(permissionKey);
         } catch (e) {
@@ -112,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // 1️⃣ Run immediate static path check from localStorage
-    if (token && role === 'admin' && PAGE_PERMISSIONS[currentPath]) {
+    if (token && (role === 'admin' || role === 'owner') && PAGE_PERMISSIONS[currentPath]) {
         const requiredPerm = PAGE_PERMISSIONS[currentPath];
         if (!hasPermission(requiredPerm)) {
             // Rejection routing
@@ -145,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderNavbar();
         
         // 2️⃣ Async sync profile permissions to detect runtime changes/privilege updates
-        if (token && role === 'admin') {
+        if (token && (role === 'admin' || role === 'owner')) {
             fetch(`${API_BASE}/api/profile`, {
                 headers: { "Authorization": `Bearer ${token}` }
             })
@@ -169,7 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Re-evaluate current path permission
                     if (PAGE_PERMISSIONS[currentPath]) {
                         const requiredPerm = PAGE_PERMISSIONS[currentPath];
-                        const stillHasAccess = newPerms.includes('super_admin') || newPerms.includes(requiredPerm);
+                        const currentRole = localStorage.getItem('role');
+                        const stillHasAccess = currentRole === 'owner' || newPerms.includes('super_admin') || newPerms.includes(requiredPerm);
                         if (!stillHasAccess) {
                             alertAccessDenied();
                         }
@@ -187,8 +190,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!navbar) return;
         const displayName = localStorage.getItem('name') || (role === 'franchise' ? 'Franchise Partner' : 'SSB Admin');
         let roleText = (role || 'ADMIN').replace('_', '').toUpperCase();
+        let roleColor = "var(--primary-gold)";
 
-        if (role === 'admin') {
+        if (role === 'owner') {
+            roleText = "OWNER";
+            roleColor = "#ff4757";
+        } else if (role === 'admin') {
             try {
                 const perms = JSON.parse(localStorage.getItem('permissions') || '[]');
                 if (perms.includes('super_admin')) {
@@ -306,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             let psychBatteryLinkHtml = '';
-            if (role === 'assessor' || (role === 'admin' && hasPermission('evaluations'))) {
+            if (role === 'assessor' || ((role === 'admin' || role === 'owner') && hasPermission('evaluations'))) {
                 psychBatteryLinkHtml = `<a href="#" class="admin-dashboard-link" id="psychBatteryHeaderLink">Candidate Evaluation</a>`;
             }
 
@@ -317,7 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <img src="${savedAvatar}" alt="Admin Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
                     <div style="display: flex; flex-direction: column; line-height: 1.2;">
                         <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">Welcome, ${displayName}</span>
-                        <span style="font-size: 0.72rem; color: var(--primary-gold); font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">${roleText}</span>
+                        <span style="font-size: 0.72rem; color: ${roleColor}; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">${roleText}</span>
                     </div>
                 </div>
                 <div class="admin-dashboard-right">

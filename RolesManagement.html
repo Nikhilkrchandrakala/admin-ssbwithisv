@@ -95,6 +95,13 @@
             border: var(--border-gold);
         }
 
+        .role-owner {
+            background: rgba(255, 71, 87, 0.12);
+            color: #ff4757;
+            border: 1px solid rgba(255, 71, 87, 0.35);
+            box-shadow: 0 0 8px rgba(255, 71, 87, 0.15);
+        }
+
         .source-badge {
             font-size: 10px;
             padding: 3px 8px;
@@ -156,14 +163,13 @@
                             <th>Email Address</th>
                             <th>Phone Number</th>
                             <th>Designated Role</th>
-                            <th>Storage Context</th>
                             <th>Details / Affiliate Info</th>
                             <th style="width: 200px; text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody">
                         <tr>
-                            <td colspan="7" class="text-center p-5">
+                            <td colspan="6" class="text-center p-5">
                                 <div class="spinner-border text-warning" role="status"></div>
                                 <p class="mt-3 mb-0 opacity-70">Fetching staff accounts from database...</p>
                             </td>

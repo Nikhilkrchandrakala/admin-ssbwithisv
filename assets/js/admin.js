@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('permissions');
         localStorage.removeItem('name');
     } else if (existingToken && existingRole) {
-        if (existingRole === "admin" || existingRole === "assessor") {
+        if (existingRole === "admin" || existingRole === "owner" || existingRole === "assessor") {
             window.location.href = window.location.pathname.includes('admin-login') ? "./admin/Profile.html" : "./Profile.html";
             return;
         } else if (existingRole === "franchise") {
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('token', result.token);
                 localStorage.setItem('role', result.role);
                 localStorage.setItem('name', result.user?.name || "");
-                if (result.role === "admin") {
+                if (result.role === "admin" || result.role === "owner") {
                     localStorage.setItem('permissions', JSON.stringify(result.user?.permissions || []));
                 } else {
                     localStorage.removeItem('permissions');
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Role-based routing
-                if (result.role === "admin" || result.role === "assessor") {
+                if (result.role === "admin" || result.role === "owner" || result.role === "assessor") {
                     window.location.href = window.location.pathname.includes('admin-login') ? "./admin/Profile.html" : "./Profile.html";
                 } else if (result.role === "franchise") {
                     window.location.href = window.location.pathname.includes('admin-login') ? "./admin/FranchiseDashboard.html" : "./FranchiseDashboard.html";
