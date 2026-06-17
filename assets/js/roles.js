@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const loggedInUserPayload = token ? parseJwt(token) : null;
     const loggedInUserId = loggedInUserPayload ? loggedInUserPayload.id : null;
+    const loggedInUserEmail = loggedInUserPayload ? (loggedInUserPayload.email || "").toLowerCase() : "";
 
     const ROLE_LEVELS = {
         super_admin: 4,
@@ -42,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const superAdminCheck = document.getElementById("superAdminCheck");
         if (superAdminCheck) {
-            if (ROLE_LEVELS[loggedInLevel] <= ROLE_LEVELS["super_admin"]) {
+            if (ROLE_LEVELS[loggedInLevel] < ROLE_LEVELS["super_admin"]) {
                 superAdminCheck.setAttribute("disabled", "true");
                 superAdminCheck.parentElement.style.opacity = "0.5";
                 superAdminCheck.parentElement.style.cursor = "not-allowed";
@@ -190,14 +191,26 @@ document.addEventListener("DOMContentLoaded", () => {
                             const isSelf = u.id === loggedInUserId;
                             const isTargetSuper = u.email.toLowerCase() === "info@ssbwithisv.in" || u.email.toLowerCase() === "nkc@ssbwithisv.in" || (u.permissions && u.permissions.includes("super_admin"));
                             const targetLevel = isTargetSuper ? "super_admin" : u.role;
-                            const canManage = ROLE_LEVELS[loggedInLevel] > ROLE_LEVELS[targetLevel];
+
+                            // Super Admins can edit anyone (except self/protected)
+                            const canEdit = !isSelf && !isProtected && (
+                                loggedInLevel === "super_admin" || 
+                                ROLE_LEVELS[loggedInLevel] > ROLE_LEVELS[targetLevel]
+                            );
+
+                            // nkc@ssbwithisv.in can delete anyone (except self/protected)
+                            // Other users can only delete lower level users
+                            const canDelete = !isSelf && !isProtected && (
+                                loggedInUserEmail === "nkc@ssbwithisv.in" || 
+                                ROLE_LEVELS[loggedInLevel] > ROLE_LEVELS[targetLevel]
+                            );
 
                             let editBtn = "";
                             if (isProtected) {
                                 editBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; opacity: 0.6; cursor: not-allowed;" disabled title="This is a protected user and cannot be edited."><i class="fas fa-user-shield me-1"></i> Locked</button>`;
                             } else if (isSelf) {
                                 editBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot edit your own account here."><i class="fas fa-user-lock me-1"></i> Self</button>`;
-                            } else if (!canManage) {
+                            } else if (!canEdit) {
                                 editBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot edit other users on the same or higher level."><i class="fas fa-user-shield me-1"></i> Locked</button>`;
                             } else {
                                 editBtn = `<button class="thm-btn" style="padding: 6px 12px; font-size: 0.8rem;" onclick="openRoleModal('${u.id}', '${escapedName}', '${u.email}', '${u.role}', ${u.commissionPercent || 20}, '${u.phone || ''}', '${(u.permissions || []).join(',')}', '${u.assessorType || ''}')"><i class="fas fa-edit me-1"></i> Edit</button>`;
@@ -208,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 deleteBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px; opacity: 0.6; cursor: not-allowed;" disabled title="This is a protected user and cannot be deleted."><i class="fas fa-lock me-1"></i> Locked</button>`;
                             } else if (isSelf) {
                                 deleteBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot delete your own account."><i class="fas fa-user-lock me-1"></i> Self</button>`;
-                            } else if (!canManage) {
+                            } else if (!canDelete) {
                                 deleteBtn = `<button class="thm-btn" style="background:#555; border-color:#555; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px; opacity: 0.6; cursor: not-allowed;" disabled title="You cannot delete other users on the same or higher level."><i class="fas fa-lock me-1"></i> Locked</button>`;
                             } else {
                                 deleteBtn = `<button class="thm-btn" style="background:#ff6b6b; border-color:#ff6b6b; padding: 6px 12px; font-size: 0.8rem; margin-left: 5px;" onclick="confirmDeleteUser('${u.id}', '${escapedName}', '${u.email}')"><i class="fas fa-trash-alt me-1"></i> Delete</button>`;
