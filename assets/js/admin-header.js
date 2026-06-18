@@ -107,7 +107,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const currentRole = localStorage.getItem('role');
             if (currentRole === 'owner') return true;
             const perms = JSON.parse(localStorage.getItem('permissions') || '[]');
-            return perms.includes('super_admin') || perms.includes(permissionKey);
+            if (perms.includes('super_admin')) return true;
+
+            // Handle evaluations and psych_battery interchangeably
+            if (permissionKey === 'evaluations' || permissionKey === 'psych_battery') {
+                return perms.includes('evaluations') || perms.includes('psych_battery');
+            }
+
+            return perms.includes(permissionKey);
         } catch (e) {
             return false;
         }
