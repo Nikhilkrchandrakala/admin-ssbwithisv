@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.removeItem('role');
                     localStorage.removeItem('permissions');
                     localStorage.removeItem('name');
+                    localStorage.removeItem('assessorType');
                     window.location.href = "./index.html";
                     return;
                 }
@@ -114,6 +115,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
             const user = data.user;
+
+            if (user.assessorType) {
+                localStorage.setItem('assessorType', user.assessorType);
+            } else {
+                localStorage.removeItem('assessorType');
+            }
 
             profileName.value = user.name || "";
             profileEmail.value = user.email || "";
@@ -132,7 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (user.role === "franchise") {
                 roleLabel = "Franchise Partner";
             } else if (user.role === "assessor") {
-                roleLabel = "Assessor";
+                const spec = user.assessorType;
+                if (spec === 'Psych') roleLabel = "Psychologist";
+                else if (spec === 'GTO') roleLabel = "GTO";
+                else if (spec === 'IO') roleLabel = "Interviewing Officer";
+                else if (spec === 'TO') roleLabel = "Technical Officer";
+                else roleLabel = "Assessor";
             }
 
             if (roleBadgeContainer) {

@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('role');
         localStorage.removeItem('permissions');
         localStorage.removeItem('name');
+        localStorage.removeItem('assessorType');
     } else if (existingToken && existingRole) {
         if (existingRole === "admin" || existingRole === "owner" || existingRole === "assessor") {
             window.location.href = window.location.pathname.includes('admin-login') ? "./admin/Profile.html" : "./Profile.html";
@@ -87,6 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('permissions', JSON.stringify(result.user?.permissions || []));
                 } else {
                     localStorage.removeItem('permissions');
+                }
+                if (result.role === "assessor") {
+                    localStorage.setItem('assessorType', result.user?.assessorType || "");
+                } else {
+                    localStorage.removeItem('assessorType');
                 }
 
                 // Success Feedback

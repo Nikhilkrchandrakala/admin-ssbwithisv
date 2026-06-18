@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.removeItem('role');
         localStorage.removeItem('permissions');
         localStorage.removeItem('name');
+        localStorage.removeItem('assessorType');
         window.location.href = loginRedirectUrl;
         return;
     }
@@ -154,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderNavbar();
         
         // 2️⃣ Async sync profile permissions to detect runtime changes/privilege updates
-        if (token && (role === 'admin' || role === 'owner')) {
+        if (token && (role === 'admin' || role === 'owner' || role === 'assessor')) {
             fetch(`${API_BASE}/api/profile`, {
                 headers: { "Authorization": `Bearer ${token}` }
             })
@@ -164,6 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.removeItem('role');
                     localStorage.removeItem('permissions');
                     localStorage.removeItem('name');
+                    localStorage.removeItem('assessorType');
                     window.location.href = loginRedirectUrl;
                     return null;
                 }
@@ -174,6 +176,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     const newPerms = data.user.permissions || [];
                     localStorage.setItem('permissions', JSON.stringify(newPerms));
                     localStorage.setItem('name', data.user.name || "");
+                    if (data.user.assessorType) {
+                        localStorage.setItem('assessorType', data.user.assessorType);
+                    } else {
+                        localStorage.removeItem('assessorType');
+                    }
                     
                     // Re-evaluate current path permission
                     if (PAGE_PERMISSIONS[currentPath]) {
@@ -211,6 +218,14 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (e) {
                 // ignore
             }
+        } else if (role === 'assessor') {
+            const spec = localStorage.getItem('assessorType');
+            if (spec === 'Psych') roleText = "PSYCHOLOGIST";
+            else if (spec === 'GTO') roleText = "GTO";
+            else if (spec === 'IO') roleText = "INTERVIEWING OFFICER";
+            else if (spec === 'TO') roleText = "TECHNICAL OFFICER";
+            else roleText = "ASSESSOR";
+            roleColor = "#9b59b6";
         }
 
         const savedAvatar = localStorage.getItem('profile_avatar') || './assets/imgs/admin-img.jpg';
@@ -361,6 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.removeItem('role');
                 localStorage.removeItem('permissions');
                 localStorage.removeItem('name');
+                localStorage.removeItem('assessorType');
                 window.location.href = loginRedirectUrl;
             });
         }
