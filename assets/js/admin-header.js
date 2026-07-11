@@ -260,7 +260,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // CONTENT LINKS: Dashboard, Magazine, Blogs, Gallery, Candidates
             const contentLinks = [];
             if (hasPermission('dashboard')) {
-                contentLinks.push(`<a href="./dashboard.html" class="admin-dashboard-link ${currentPath === 'dashboard.html' ? 'active' : ''}">Dashboard</a>`);
+                const isActiveAuth = currentPath === 'dashboard.html' && window.location.hash === '#authDisplaySettingsCard';
+                const isActiveDash = currentPath === 'dashboard.html' && window.location.hash !== '#authDisplaySettingsCard';
+                contentLinks.push(`<a href="./dashboard.html" class="admin-dashboard-link ${isActiveDash ? 'active' : ''}">Dashboard</a>`);
+                contentLinks.push(`<a href="./dashboard.html#authDisplaySettingsCard" class="admin-dashboard-link ${isActiveAuth ? 'active' : ''}">Auth Graphic</a>`);
             }
             if (hasPermission('magazine')) {
                 contentLinks.push(`<a href="./magazine.html" class="admin-dashboard-link ${currentPath === 'magazine.html' ? 'active' : ''}">Magazine</a>`);
