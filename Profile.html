@@ -384,6 +384,34 @@
             color: var(--primary-gold);
             font-weight: 600;
         }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .profile-container {
+                margin: 20px auto;
+                padding: 0 15px;
+            }
+            .profile-header-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 15px;
+                padding: 0 20px 25px 20px;
+                margin-top: -60px;
+            }
+            .profile-name-row {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .profile-role-sub {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .admin-card {
+                padding: 18px;
+            }
+        }
     </style>
 </head>
 

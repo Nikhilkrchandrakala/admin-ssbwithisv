@@ -25,8 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const API_BASE = (typeof config !== 'undefined' && config?.backendBaseUrl) || 'http://localhost:5001';
 
     // Dynamic login/logout redirect URL
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const loginRedirectUrl = isLocal ? './index.html' : 'https://admin.ssbwithisv.in';
+    const loginRedirectUrl = './index.html';
 
     // Helper to verify JWT expiration clientside
     const isTokenExpired = (t) => {
@@ -233,6 +232,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (role === 'franchise') {
             navbar.innerHTML = `
                 <div class="admin-dashboard-left">
+                    <button class="admin-mobile-toggle" id="adminMobileToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <img src="./assets/logo/ISV2.png" alt="SSB Seal" class="admin-navbar-seal" style="height: 38px; width: 38px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(224, 194, 20, 0.25)); margin-right: 5px;">
                     <div style="width: 1px; height: 26px; background: rgba(255, 255, 255, 0.15); margin: 0 10px;"></div>
                     <img src="${savedAvatar}" alt="Partner Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
@@ -241,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span style="font-size: 0.72rem; color: var(--primary-gold); font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">${roleText}</span>
                     </div>
                 </div>
-                <div class="admin-dashboard-right">
+                <div class="admin-dashboard-right" id="adminNavbarRight">
                     <div class="admin-dropdown notification-dropdown">
                         <div class="admin-dashboard-link dropdown-toggle" style="position:relative; padding: 0 15px;">
                             <i class="fas fa-bell"></i>
@@ -344,6 +346,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             navbar.innerHTML = `
                 <div class="admin-dashboard-left">
+                    <button class="admin-mobile-toggle" id="adminMobileToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <img src="./assets/logo/ISV2.png" alt="SSB Seal" class="admin-navbar-seal" style="height: 38px; width: 38px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(224, 194, 20, 0.25)); margin-right: 5px;">
                     <div style="width: 1px; height: 26px; background: rgba(255, 255, 255, 0.15); margin: 0 10px;"></div>
                     <img src="${savedAvatar}" alt="Admin Image" class="admin-dashboard-image" onerror="this.src='https://via.placeholder.com/45'">
@@ -352,7 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span style="font-size: 0.72rem; color: ${roleColor}; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;">${roleText}</span>
                     </div>
                 </div>
-                <div class="admin-dashboard-right">
+                <div class="admin-dashboard-right" id="adminNavbarRight">
                     <div class="admin-dropdown notification-dropdown">
                         <div class="admin-dashboard-link dropdown-toggle" style="position:relative; padding: 0 15px;">
                             <i class="fas fa-bell"></i>
@@ -485,6 +490,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { "Authorization": `Bearer ${token}` }
             }).then(() => loadNotifications());
         };
+
+        // Toggle mobile menu
+        const mobileToggle = document.getElementById('adminMobileToggle');
+        const navbarRight = document.getElementById('adminNavbarRight');
+        if (mobileToggle && navbarRight) {
+            mobileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navbarRight.classList.toggle('show');
+                const icon = mobileToggle.querySelector('i');
+                if (icon) {
+                    if (navbarRight.classList.contains('show')) {
+                        icon.className = 'fas fa-times';
+                    } else {
+                        icon.className = 'fas fa-bars';
+                    }
+                }
+            });
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!navbarRight.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    navbarRight.classList.remove('show');
+                    const icon = mobileToggle.querySelector('i');
+                    if (icon) icon.className = 'fas fa-bars';
+                }
+            });
+        }
 
         loadNotifications();
     }

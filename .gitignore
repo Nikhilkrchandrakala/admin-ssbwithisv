@@ -3,3 +3,11 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# Custom ignores
+scratch/
+github_deploy_key*
+vps_deploy_key*
+*.key
+*.pub
+.env*
