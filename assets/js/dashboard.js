@@ -97,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const contactForm = document.getElementById('contactSettingsForm');
     const whatsappInput = document.getElementById('whatsappNumberInput');
     const callInput = document.getElementById('callNumberInput');
+    const secondaryCallInput = document.getElementById('secondaryCallNumberInput');
 
     const fetchContactSettings = async () => {
         try {
@@ -106,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.ok && data) {
                 whatsappInput.value = data.whatsappNumber || '';
                 callInput.value = data.callNumber || '';
+                if (secondaryCallInput) secondaryCallInput.value = data.secondaryCallNumber || '';
             } else {
                 throw new Error('Failed to load contact settings');
             }
@@ -122,7 +124,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const updatedSettings = {
                 whatsappNumber: whatsappInput.value,
-                callNumber: callInput.value
+                callNumber: callInput.value,
+                secondaryCallNumber: secondaryCallInput ? secondaryCallInput.value : ''
             };
 
             try {
